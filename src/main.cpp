@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <ArduinoOTA.h>
 #include <ESPmDNS.h>
 #include <Preferences.h>
 #include <WiFi.h>
@@ -12,8 +13,8 @@ const int PIN_CLOCK = 20;
 const int PIN_DATA = 19;
 
 const int PWM_CHANNEL = 0;
-const int PWM_FREQUENCY = 10000;
-const int PWM_RESOLUTION = 4;
+const int PWM_FREQUENCY = 1000;
+const int PWM_RESOLUTION = 10;
 const int PWM_DUTY_CYCLE_MAX = 1 << PWM_RESOLUTION;
 
 const int FPS = 60;
@@ -108,7 +109,8 @@ void draw(int frame) {
     const int col = pos & 15;
     const int row = pos >> 4;
 
-    const int on = pixels[pos];
+    // const int on = pixels[pos];
+    const int on = 1;
 
     digitalWrite(PIN_DATA, on ? HIGH : LOW);
     digitalWrite(PIN_CLOCK, HIGH);
@@ -124,7 +126,7 @@ int prevSwitchState;
 void setup() {
   Serial.begin(115200);
 
-  delay(5000);
+  // delay(5000);
 
   Serial.println("Booting");
 
@@ -161,9 +163,44 @@ void setup() {
   Serial.println("");
   Serial.println("Connected to WiFi");
 
-  if (MDNS.begin(hostname.c_str())) {
-    Serial.printf("mDNS responder started: %s.local\n", hostname.c_str());
-  }
+  // if (MDNS.begin(hostname.c_str())) {
+  //   Serial.printf("mDNS responder started: %s.local\n", hostname.c_str());
+  // }
+
+  ArduinoOTA.setHostname(hostname.c_str());
+
+  ArduinoOTA
+      .onStart([]() {
+        String type;
+
+        if (ArduinoOTA.getCommand() == U_FLASH)
+          type = "sketch";
+        else // U_SPIFFS
+          type = "filesystem";
+
+        // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS
+        // using SPIFFS.end()
+        Serial.println("Start updating " + type);
+      })
+      .onEnd([]() { Serial.println("\nEnd"); })
+      .onProgress([](unsigned int progress, unsigned int total) {
+        Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+      })
+      .onError([](ota_error_t error) {
+        Serial.printf("Error[%u]: ", error);
+        if (error == OTA_AUTH_ERROR)
+          Serial.println("Auth Failed");
+        else if (error == OTA_BEGIN_ERROR)
+          Serial.println("Begin Failed");
+        else if (error == OTA_CONNECT_ERROR)
+          Serial.println("Connect Failed");
+        else if (error == OTA_RECEIVE_ERROR)
+          Serial.println("Receive Failed");
+        else if (error == OTA_END_ERROR)
+          Serial.println("End Failed");
+      });
+
+  ArduinoOTA.begin();
 
   ledcSetup(PWM_CHANNEL, PWM_FREQUENCY, PWM_RESOLUTION);
   ledcAttachPin(PIN_ENABLE, PWM_CHANNEL);
@@ -183,17 +220,19 @@ void setup() {
 }
 
 void loop() {
+  ArduinoOTA.handle();
+
   int switchState = !digitalRead(PIN_SWITCH);
 
   if (switchState != prevSwitchState) {
     prevSwitchState = switchState;
-    digitalWrite(BUILTIN_LED, switchState);
-    Serial.println(switchState ? "ON" : "OFF");
+    // digitalWrite(BUILTIN_LED, switchState);
+    // Serial.println(switchState ? "ON" : "OFF");
   }
 
   // int seconds = frame / FPS;
-
   // ledcWrite(PWM_CHANNEL, seconds % PWM_DUTY_CYCLE_MAX);
+  // ledcWrite(PWM_CHANNEL, (frame * 60) % PWM_DUTY_CYCLE_MAX);
 
   draw(frame++);
   delay(1000 / FPS);
