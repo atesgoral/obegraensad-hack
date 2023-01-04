@@ -42,75 +42,16 @@ const int POSITIONS[ROWS * COLS] = {
   0xef, 0xee, 0xed, 0xec, 0xeb, 0xea, 0xe9, 0xe8, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff,
 };
 
-const int EMPTY[ROWS * COLS] = {
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-};
-
-const int TRIANGLE[ROWS * COLS] = {
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,
-  1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,
-  1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,
-  1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,
-  1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,
-  1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,
-  1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,
-  1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,
-  1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,
-  1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-};
-
-const int CHECKER[ROWS * COLS] = {
-  1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,
-  0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-  1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,
-  0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-  1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,
-  0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-  1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,
-  0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-  1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,
-  0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-  1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,
-  0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-  1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,
-  0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-  1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,
-  0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-};
+const int EMPTY[ROWS * COLS] = {};
 // clang-format on
 
-const int *pixels = CHECKER;
-int frame = 0;
-
-void draw(int frame) {
+void draw(const int *pixels) {
   for (int idx = 0; idx < ROWS * COLS; idx++) {
     const int pos = POSITIONS[idx];
     const int col = pos & 15;
     const int row = pos >> 4;
 
-    // const int on = pixels[pos];
-    const int on = 1;
+    const int on = pixels[pos];
 
     digitalWrite(PIN_DATA, on ? HIGH : LOW);
     digitalWrite(PIN_CLOCK, HIGH);
@@ -119,6 +60,68 @@ void draw(int frame) {
 
   digitalWrite(PIN_LATCH, HIGH);
   digitalWrite(PIN_LATCH, LOW);
+}
+
+// Neighbour offsets
+// clang-format off
+const int NEIGHBOURS[][2] = {
+  {0, -1},
+  {1, -1},
+  {1, 0},
+  {1, 1},
+  {0, 1},
+  {-1, 1},
+  {-1, 0},
+  {-1, -1}
+};
+// clang-format on
+
+int cells[ROWS * COLS] = {};
+int next[ROWS * COLS] = {};
+
+void randomize() {
+  for (int i = 0; i < ROWS * COLS; i++) {
+    cells[i] = random(2);
+  }
+}
+
+void nextGeneration() {
+  memcpy(static_cast<void *>(next), cells, sizeof(next));
+
+  bool changed = false;
+
+  for (int row = 0; row < ROWS; row++) {
+    for (int col = 0; col < COLS; col++) {
+      int neighbours = 0;
+
+      for (int i = 0; i < 8; i++) {
+        int nrow = (row + NEIGHBOURS[i][0] + ROWS) % ROWS;
+        int ncol = (col + NEIGHBOURS[i][1] + COLS) % COLS;
+
+        neighbours += cells[nrow * COLS + ncol];
+      }
+
+      int idx = row * COLS + col;
+
+      if (cells[idx] == 1) {
+        if (neighbours < 2 || neighbours > 3) {
+          next[idx] = 0;
+          changed = true;
+        }
+      } else {
+        if (neighbours == 3) {
+          next[idx] = 1;
+          changed = true;
+        }
+      }
+    }
+  }
+
+  if (changed) {
+    memcpy(static_cast<void *>(cells), next, sizeof(cells));
+  } else {
+    randomize();
+  }
 }
 
 int prevSwitchState;
@@ -217,7 +220,12 @@ void setup() {
   digitalWrite(PIN_CLOCK, LOW);
 
   prevSwitchState = !digitalRead(PIN_SWITCH);
+
+  randomize();
 }
+
+int frame = 0;
+int pixels[ROWS * COLS] = {};
 
 void loop() {
   ArduinoOTA.handle();
@@ -234,6 +242,21 @@ void loop() {
   // ledcWrite(PWM_CHANNEL, seconds % PWM_DUTY_CYCLE_MAX);
   // ledcWrite(PWM_CHANNEL, (frame * 60) % PWM_DUTY_CYCLE_MAX);
 
-  draw(frame++);
+  // memcpy(static_cast<void *>(pixels), EMPTY, sizeof(pixels));
+
+  // memcpy(static_cast<void *>(pixels), cells, sizeof(cells));
+
+  if (frame > 0 && frame % 10 == 0) {
+    if (frame % (60 * 60) == 0) {
+      randomize();
+    } else {
+      nextGeneration();
+    }
+  }
+
+  draw(cells);
+
+  frame++;
+
   delay(1000 / FPS);
 }
