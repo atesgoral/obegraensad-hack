@@ -1,7 +1,10 @@
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <ArduinoOTA.h>
 #include <ESPmDNS.h>
 #include <Preferences.h>
+#include <SocketIOclient.h>
+#include <WebSocketsClient.h>
 #include <WiFi.h>
 
 const int PIN_ENABLE = 47;
@@ -124,12 +127,104 @@ void nextGeneration() {
   }
 }
 
+SocketIOclient socketIO;
+
+bool on = true;
+
+void socketIOEvent(socketIOmessageType_t type, uint8_t *payload,
+                   size_t length) {
+  switch (type) {
+  case sIOtype_DISCONNECT:
+    Serial.printf("[IOc] Disconnected!\n");
+    break;
+  case sIOtype_CONNECT:
+    Serial.printf("[IOc] Connected to url: %s\n", payload);
+
+    // join default namespace (no auto join in Socket.IO V3)
+    socketIO.send(sIOtype_CONNECT, "/");
+    break;
+  case sIOtype_EVENT: {
+    char *sptr = NULL;
+    int id = strtol((char *)payload, &sptr, 10);
+    Serial.printf("[IOc] get event: %s id: %d\n", payload, id);
+    if (id) {
+      payload = (uint8_t *)sptr;
+    }
+    DynamicJsonDocument doc(1024);
+    DeserializationError error = deserializeJson(doc, payload, length);
+    if (error) {
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(error.c_str());
+      return;
+    }
+
+    String eventName = doc[0];
+    Serial.printf("[IOc] event name: %s\n", eventName.c_str());
+
+    // Message Includes a ID for a ACK (callback)
+    if (id) {
+      // creat JSON message for Socket.IO (ack)
+      DynamicJsonDocument docOut(1024);
+      JsonArray array = docOut.to<JsonArray>();
+
+      // add payload (parameters) for the ack (callback function)
+      JsonObject param1 = array.createNestedObject();
+      param1["now"] = millis();
+
+      // JSON to String (serializion)
+      String output;
+      output += id;
+      serializeJson(docOut, output);
+
+      // Send event
+      socketIO.send(sIOtype_ACK, output);
+    } else {
+      if (eventName == "activate") {
+        Serial.println("IFTTT activation");
+
+        String scene = doc[1];
+
+        Serial.println("Scene: " + scene);
+
+        if (scene == "pixels") {
+          Serial.println("Toggling Pixels");
+          on = !on;
+          // TODO save last state in EPROM
+        }
+      }
+    }
+  } break;
+  case sIOtype_ACK:
+    Serial.printf("[IOc] get ack: %u\n", length);
+    break;
+  case sIOtype_ERROR:
+    Serial.printf("[IOc] get error: %u\n", length);
+    break;
+  case sIOtype_BINARY_EVENT:
+    Serial.printf("[IOc] get binary: %u\n", length);
+    break;
+  case sIOtype_BINARY_ACK:
+    Serial.printf("[IOc] get binary ack: %u\n", length);
+    break;
+  }
+}
+
 int prevSwitchState;
+
+void reset_settings(Preferences &preferences) {
+  Serial.println("Resetting settings");
+
+  preferences.clear();
+
+  preferences.putString("wifi_ssid", "<your WiFi SSID>");
+  preferences.putString("wifi_password", "<your WiFi password>");
+  preferences.putString("hostname", "obegransad");
+}
 
 void setup() {
   Serial.begin(115200);
 
-  // delay(5000);
+  delay(1000);
 
   Serial.println("Booting");
 
@@ -137,19 +232,11 @@ void setup() {
 
   preferences.begin("obegransad");
 
-  String wifi_ssid = preferences.getString("wifi_ssid", "ssid");
-  String wifi_password = preferences.getString("wifi_password", "password");
-  String hostname = preferences.getString("hostname", "obegransad");
+  // reset_settings(preferences);
 
-  if (wifi_ssid == "ssid" || wifi_password == "password") {
-    Serial.println("Resetting WiFi credentials");
-
-    wifi_ssid = "<your WiFi SSID>";
-    wifi_password = "<your WiFi password>";
-
-    preferences.putString("wifi_ssid", wifi_ssid);
-    preferences.putString("wifi_password", wifi_password);
-  }
+  String wifi_ssid = preferences.getString("wifi_ssid");
+  String wifi_password = preferences.getString("wifi_password");
+  String hostname = preferences.getString("hostname");
 
   preferences.end();
 
@@ -205,6 +292,11 @@ void setup() {
 
   ArduinoOTA.begin();
 
+  socketIO.beginSSL("frekvens-fjarrkontroll.glitch.me", 443,
+                    "/socket.io/?EIO=4");
+
+  socketIO.onEvent(socketIOEvent);
+
   ledcSetup(PWM_CHANNEL, PWM_FREQUENCY, PWM_RESOLUTION);
   ledcAttachPin(PIN_ENABLE, PWM_CHANNEL);
 
@@ -229,6 +321,7 @@ int pixels[ROWS * COLS] = {};
 
 void loop() {
   ArduinoOTA.handle();
+  socketIO.loop();
 
   int switchState = !digitalRead(PIN_SWITCH);
 
@@ -236,15 +329,17 @@ void loop() {
     prevSwitchState = switchState;
     // digitalWrite(BUILTIN_LED, switchState);
     // Serial.println(switchState ? "ON" : "OFF");
+
+    if (switchState == LOW) {
+      on = !on;
+    }
   }
+
+  ledcWrite(PWM_CHANNEL, on ? 0 : PWM_DUTY_CYCLE_MAX);
 
   // int seconds = frame / FPS;
   // ledcWrite(PWM_CHANNEL, seconds % PWM_DUTY_CYCLE_MAX);
   // ledcWrite(PWM_CHANNEL, (frame * 60) % PWM_DUTY_CYCLE_MAX);
-
-  // memcpy(static_cast<void *>(pixels), EMPTY, sizeof(pixels));
-
-  // memcpy(static_cast<void *>(pixels), cells, sizeof(cells));
 
   if (frame > 0 && frame % 10 == 0) {
     if (frame % (60 * 60) == 0) {
