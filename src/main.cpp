@@ -1,5 +1,3 @@
-#include "time.h"
-
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ArduinoOTA.h>
@@ -9,7 +7,9 @@
 #include <WebSocketsClient.h>
 #include <WiFi.h>
 
-#include <Text.h>
+#include <Clock.h>
+#include <GoL.h>
+#include <Scene.h>
 
 const int PIN_ENABLE = 47;
 
@@ -48,8 +48,6 @@ const int POSITIONS[ROWS * COLS] = {
   0xe7, 0xe6, 0xe5, 0xe4, 0xe3, 0xe2, 0xe1, 0xe0, 0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
   0xef, 0xee, 0xed, 0xec, 0xeb, 0xea, 0xe9, 0xe8, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff,
 };
-
-const int EMPTY[ROWS * COLS] = {};
 // clang-format on
 
 void draw(const int *pixels) {
@@ -67,68 +65,6 @@ void draw(const int *pixels) {
 
   digitalWrite(PIN_LATCH, HIGH);
   digitalWrite(PIN_LATCH, LOW);
-}
-
-// Neighbour offsets
-// clang-format off
-const int NEIGHBOURS[][2] = {
-  {0, -1},
-  {1, -1},
-  {1, 0},
-  {1, 1},
-  {0, 1},
-  {-1, 1},
-  {-1, 0},
-  {-1, -1}
-};
-// clang-format on
-
-int cells[ROWS * COLS] = {};
-int next[ROWS * COLS] = {};
-
-void randomize() {
-  for (int i = 0; i < ROWS * COLS; i++) {
-    cells[i] = random(2);
-  }
-}
-
-void nextGeneration() {
-  memcpy(static_cast<void *>(next), cells, sizeof(next));
-
-  bool changed = false;
-
-  for (int row = 0; row < ROWS; row++) {
-    for (int col = 0; col < COLS; col++) {
-      int neighbours = 0;
-
-      for (int i = 0; i < 8; i++) {
-        int nrow = (row + NEIGHBOURS[i][0] + ROWS) % ROWS;
-        int ncol = (col + NEIGHBOURS[i][1] + COLS) % COLS;
-
-        neighbours += cells[nrow * COLS + ncol];
-      }
-
-      int idx = row * COLS + col;
-
-      if (cells[idx] == 1) {
-        if (neighbours < 2 || neighbours > 3) {
-          next[idx] = 0;
-          changed = true;
-        }
-      } else {
-        if (neighbours == 3) {
-          next[idx] = 1;
-          changed = true;
-        }
-      }
-    }
-  }
-
-  if (changed) {
-    memcpy(static_cast<void *>(cells), next, sizeof(cells));
-  } else {
-    randomize();
-  }
 }
 
 SocketIOclient socketIO;
@@ -226,6 +162,8 @@ void reset_settings(Preferences &preferences) {
   preferences.putString("hostname", "obegransad");
 }
 
+Scene *current_scene = 0;
+
 void setup() {
   Serial.begin(115200);
 
@@ -318,29 +256,13 @@ void setup() {
 
   prevSwitchState = !digitalRead(PIN_SWITCH);
 
-  randomize();
-
-  const char *ntp_server = "pool.ntp.org";
-  const long gmt_offset_sec = -5 * 60 * 60;
-  const int dst_offset_sec = 0;
-
-  configTime(gmt_offset_sec, dst_offset_sec, ntp_server);
+  // current_scene = new GoL<COLS, ROWS>();
+  current_scene = new Clock();
+  current_scene->init();
 }
 
 int frame = 0;
 int pixels[ROWS * COLS] = {};
-
-int prev_seconds = 0;
-
-void clockDigits(char *buf, int component) {
-  snprintf(buf, sizeof(buf), "%02d", component);
-
-  for (int i = 0; i < 2; i++) {
-    if (buf[i] == '0') {
-      buf[i] = 'O';
-    }
-  }
-}
 
 void loop() {
   ArduinoOTA.handle();
@@ -359,45 +281,13 @@ void loop() {
     }
   }
 
-  int seconds = frame / FPS;
-
   // ledcWrite(PWM_CHANNEL, seconds % PWM_DUTY_CYCLE_MAX);
   // ledcWrite(PWM_CHANNEL, (frame * 60) % PWM_DUTY_CYCLE_MAX);
 
-  if (frame > 0 && frame % 10 == 0) {
-    if (frame % (60 * 60) == 0) {
-      randomize();
-    } else {
-      nextGeneration();
-    }
-  }
+  memset(pixels, 0, sizeof(pixels));
 
-  if (seconds != prev_seconds) {
-    prev_seconds = seconds;
-
-    struct tm timeinfo;
-
-    if (!getLocalTime(&timeinfo)) {
-      return;
-    }
-
-    memset(pixels, 0, sizeof(pixels));
-
-    char buf[2 + 1];
-
-    clockDigits(buf, timeinfo.tm_hour);
-    Text::renderText(pixels, buf, 2, 0, 2);
-
-    clockDigits(buf, timeinfo.tm_min);
-    Text::renderText(pixels, buf, 2, 9, 2);
-
-    if (seconds & 1) {
-      pixels[7 * 16 + 7] = 1;
-      pixels[8 * 16 + 8] = 1;
-    } else {
-      pixels[7 * 16 + 8] = 1;
-      pixels[8 * 16 + 7] = 1;
-    }
+  if (current_scene) {
+    current_scene->render(pixels, frame, FPS);
   }
 
   draw(pixels);
@@ -406,5 +296,6 @@ void loop() {
 
   frame++;
 
+  // TODO make this based on elapsed time
   delay(1000 / FPS);
 }
