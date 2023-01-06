@@ -196,10 +196,6 @@ void setup() {
   Serial.println("");
   Serial.println("Connected to WiFi");
 
-  // if (MDNS.begin(hostname.c_str())) {
-  //   Serial.printf("mDNS responder started: %s.local\n", hostname.c_str());
-  // }
-
   ArduinoOTA.setHostname(hostname.c_str());
 
   ArduinoOTA
@@ -291,8 +287,6 @@ void loop() {
   }
 
   draw(pixels);
-
-  // draw(cells);
 
   frame++;
 
