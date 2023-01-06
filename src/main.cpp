@@ -1,3 +1,5 @@
+#include "time.h"
+
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ArduinoOTA.h>
@@ -6,6 +8,8 @@
 #include <SocketIOclient.h>
 #include <WebSocketsClient.h>
 #include <WiFi.h>
+
+#include <Text.h>
 
 const int PIN_ENABLE = 47;
 
@@ -189,6 +193,7 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t *payload,
         if (scene == "pixels") {
           Serial.println("Toggling Pixels");
           on = !on;
+          ledcWrite(PWM_CHANNEL, on ? 0 : PWM_DUTY_CYCLE_MAX);
           // TODO save last state in EPROM
         }
       }
@@ -314,10 +319,28 @@ void setup() {
   prevSwitchState = !digitalRead(PIN_SWITCH);
 
   randomize();
+
+  const char *ntp_server = "pool.ntp.org";
+  const long gmt_offset_sec = -5 * 60 * 60;
+  const int dst_offset_sec = 0;
+
+  configTime(gmt_offset_sec, dst_offset_sec, ntp_server);
 }
 
 int frame = 0;
 int pixels[ROWS * COLS] = {};
+
+int prev_seconds = 0;
+
+void clockDigits(char *buf, int component) {
+  snprintf(buf, sizeof(buf), "%02d", component);
+
+  for (int i = 0; i < 2; i++) {
+    if (buf[i] == '0') {
+      buf[i] = 'O';
+    }
+  }
+}
 
 void loop() {
   ArduinoOTA.handle();
@@ -332,12 +355,12 @@ void loop() {
 
     if (switchState == LOW) {
       on = !on;
+      ledcWrite(PWM_CHANNEL, on ? 0 : PWM_DUTY_CYCLE_MAX);
     }
   }
 
-  ledcWrite(PWM_CHANNEL, on ? 0 : PWM_DUTY_CYCLE_MAX);
+  int seconds = frame / FPS;
 
-  // int seconds = frame / FPS;
   // ledcWrite(PWM_CHANNEL, seconds % PWM_DUTY_CYCLE_MAX);
   // ledcWrite(PWM_CHANNEL, (frame * 60) % PWM_DUTY_CYCLE_MAX);
 
@@ -349,7 +372,37 @@ void loop() {
     }
   }
 
-  draw(cells);
+  if (seconds != prev_seconds) {
+    prev_seconds = seconds;
+
+    struct tm timeinfo;
+
+    if (!getLocalTime(&timeinfo)) {
+      return;
+    }
+
+    memset(pixels, 0, sizeof(pixels));
+
+    char buf[2 + 1];
+
+    clockDigits(buf, timeinfo.tm_hour);
+    Text::renderText(pixels, buf, 2, 0, 2);
+
+    clockDigits(buf, timeinfo.tm_min);
+    Text::renderText(pixels, buf, 2, 9, 2);
+
+    if (seconds & 1) {
+      pixels[7 * 16 + 7] = 1;
+      pixels[8 * 16 + 8] = 1;
+    } else {
+      pixels[7 * 16 + 8] = 1;
+      pixels[8 * 16 + 7] = 1;
+    }
+  }
+
+  draw(pixels);
+
+  // draw(cells);
 
   frame++;
 
