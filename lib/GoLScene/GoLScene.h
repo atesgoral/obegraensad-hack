@@ -9,8 +9,8 @@ public:
   virtual void render(char pixels[PIXELS], const int frame);
 
 private:
-  int cells[PIXELS];
-  int next[sizeof(cells)];
+  char cells[PIXELS];
+  char next[sizeof(cells)];
 
   void randomize();
   void nextGeneration();

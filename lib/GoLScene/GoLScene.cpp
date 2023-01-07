@@ -33,7 +33,9 @@ void GoLScene::render(char pixels[PIXELS], const int frame) {
     }
   }
 
-  memcpy(static_cast<void *>(pixels), cells, sizeof(cells));
+  for (int i = 0; i < PIXELS; i++) {
+    pixels[i] = cells[i];
+  }
 }
 
 void GoLScene::randomize() {
