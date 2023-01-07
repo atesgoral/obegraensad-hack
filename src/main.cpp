@@ -50,7 +50,7 @@ const int POSITIONS[PIXELS] = {
 };
 // clang-format on
 
-void draw(const int *pixels) {
+void draw(const char pixels[PIXELS]) {
   for (int idx = 0; idx < PIXELS; idx++) {
     const int pos = POSITIONS[idx];
     const int col = pos & 15;
@@ -68,7 +68,7 @@ void draw(const int *pixels) {
 }
 
 int frame = 0;
-int pixels[PIXELS] = {};
+char pixels[PIXELS] = {};
 
 Scene *current_scene = NULL;
 

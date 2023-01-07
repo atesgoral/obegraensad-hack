@@ -5,7 +5,7 @@
 
 class ErrorStatus : virtual public Scene {
 public:
-  virtual void render(int pixels[PIXELS], const int frame);
+  virtual void render(char pixels[PIXELS], const int frame);
 };
 
 #endif

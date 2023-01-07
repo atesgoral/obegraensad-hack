@@ -7,7 +7,7 @@ class Scene {
 public:
   virtual bool init() { return true; }
   virtual void cleanup() {}
-  virtual void render(int pixels[PIXELS], const int frame) = 0;
+  virtual void render(char pixels[PIXELS], const int frame) = 0;
 };
 
 #endif

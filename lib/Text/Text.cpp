@@ -7,7 +7,7 @@
 
 typedef struct {
   const char c;
-  const unsigned char data[H];
+  const char data[H];
 } entry;
 
 // clang-format off
@@ -110,8 +110,8 @@ const entry MONOGRAM[] = {
 };
 // clang-format on
 
-int Text::renderChar(int pixels[PIXELS], char c, int x, int y) {
-  const unsigned char *data = 0;
+int Text::renderChar(char pixels[PIXELS], char c, int x, int y) {
+  const char *data;
   const int len = sizeof(MONOGRAM) / sizeof(MONOGRAM[0]);
 
   for (int i = 0; i < len; i++) {
@@ -134,7 +134,7 @@ int Text::renderChar(int pixels[PIXELS], char c, int x, int y) {
   return W;
 }
 
-void Text::renderText(int pixels[PIXELS], const char *text, int x, int y,
+void Text::renderText(char pixels[PIXELS], const char *text, int x, int y,
                       int kerning) {
   int o = 0;
   int len = strlen(text);
@@ -144,11 +144,11 @@ void Text::renderText(int pixels[PIXELS], const char *text, int x, int y,
   }
 }
 
-void Text::renderText(int pixels[PIXELS], const char *text, int x, int y) {
+void Text::renderText(char pixels[PIXELS], const char *text, int x, int y) {
   renderText(pixels, text, x, y, 1);
 }
 
-void Text::renderText4x4(int pixels[PIXELS], const char text[4]) {
+void Text::renderText4x4(char pixels[PIXELS], const char text[4]) {
   renderChar(pixels, text[0], 2, 0);
   renderChar(pixels, text[1], 9, 0);
   renderChar(pixels, text[2], 2, 9);

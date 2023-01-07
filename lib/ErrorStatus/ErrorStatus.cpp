@@ -6,7 +6,7 @@
 #include <Globals.h>
 
 // clang-format off
-const int SKULL[PIXELS] = {
+const char SKULL[PIXELS] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
   0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
@@ -26,7 +26,7 @@ const int SKULL[PIXELS] = {
 };
 // clang-format on
 
-void ErrorStatus::render(int pixels[PIXELS], const int frame) {
+void ErrorStatus::render(char pixels[PIXELS], const int frame) {
   if ((random() & 15) < 13) {
     Bitmap::renderBitmap(pixels, SKULL);
   }

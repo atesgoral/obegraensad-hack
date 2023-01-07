@@ -5,7 +5,7 @@
 
 #include "WiFiStatus.h"
 
-void WiFiStatus::render(int pixels[PIXELS], const int frame) {
+void WiFiStatus::render(char pixels[PIXELS], const int frame) {
   Text::renderText4x4(pixels, "WiFi");
 
   int x = 7;

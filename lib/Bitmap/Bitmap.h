@@ -5,7 +5,7 @@
 
 namespace Bitmap {
 
-void renderBitmap(int pixels[PIXELS], const int *bitmap);
+void renderBitmap(char pixels[PIXELS], const char *bitmap);
 
 }
 

@@ -2,7 +2,7 @@
 
 #include <Globals.h>
 
-void SceneSwitcher::render(int pixels[PIXELS], const int frame) {
+void SceneSwitcher::render(char pixels[PIXELS], const int frame) {
   if (!m_scene_head) {
     return;
   }
