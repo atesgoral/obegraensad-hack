@@ -8,6 +8,7 @@
 #include <WiFi.h>
 
 #include <Clock.h>
+#include <ErrorStatus.h>
 #include <Globals.h>
 #include <GoL.h>
 #include <OTAStatus.h>
@@ -189,6 +190,7 @@ void reset_settings(Preferences &preferences) {
   preferences.putString("hostname", "obegransad");
 }
 
+ErrorStatus error_status;
 WiFiStatus wifi_status;
 OTAStatus ota_status;
 Clock clock_scene;
@@ -301,7 +303,9 @@ void setup() {
 
   socketIO.onEvent(socketIOEvent);
 
+  // set_scene(&error_status);
   set_scene(&clock_scene);
+  // set_scene(&gol_scene);
 }
 
 void loop() {
