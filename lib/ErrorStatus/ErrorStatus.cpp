@@ -26,7 +26,7 @@ const int SKULL[PIXELS] = {
 };
 // clang-format on
 
-void ErrorStatus::render(int *pixels, const int frame, const int fps) {
+void ErrorStatus::render(int *pixels, const int frame) {
   if ((random() & 15) < 13) {
     Bitmap::renderBitmap(pixels, SKULL);
   }

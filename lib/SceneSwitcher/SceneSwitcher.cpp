@@ -2,7 +2,7 @@
 
 #include <Globals.h>
 
-void SceneSwitcher::render(int *pixels, const int frame, const int fps) {
+void SceneSwitcher::render(int *pixels, const int frame) {
   if (!m_scene_head) {
     return;
   }
@@ -20,7 +20,7 @@ void SceneSwitcher::render(int *pixels, const int frame, const int fps) {
     m_current_scene->scene->init();
   }
 
-  m_current_scene->scene->render(pixels, frame, fps);
+  m_current_scene->scene->render(pixels, frame);
 }
 
 void SceneSwitcher::append_scene(Scene *scene, int duration) {

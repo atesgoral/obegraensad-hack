@@ -88,7 +88,7 @@ void render() {
   memset(pixels, 0, sizeof(pixels));
 
   if (current_scene) {
-    current_scene->render(pixels, frame, FPS);
+    current_scene->render(pixels, frame);
   }
 
   draw(pixels);

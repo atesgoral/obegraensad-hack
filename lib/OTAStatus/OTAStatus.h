@@ -5,7 +5,7 @@
 
 class OTAStatus : virtual public Scene {
 public:
-  virtual void render(int *pixels, const int frame, const int fps);
+  virtual void render(int *pixels, const int frame);
   bool set_progress(int progress);
 
 private:
