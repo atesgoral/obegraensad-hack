@@ -1,9 +1,9 @@
-#ifndef OTAStatus_h
-#define OTAStatus_h
+#ifndef OTAStatusScene_h
+#define OTAStatusScene_h
 
 #include <Scene.h>
 
-class OTAStatus : virtual public Scene {
+class OTAStatusScene : virtual public Scene {
 public:
   virtual void render(char pixels[PIXELS], const int frame);
   bool set_progress(int progress);

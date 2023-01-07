@@ -8,13 +8,13 @@
 #include <WiFi.h>
 
 #include <ClockScene.h>
-#include <ErrorStatus.h>
+#include <ErrorStatusScene.h>
 #include <Globals.h>
 #include <GoLScene.h>
-#include <OTAStatus.h>
+#include <OTAStatusScene.h>
 #include <Scene.h>
 #include <SceneSwitcher.h>
-#include <WiFiStatus.h>
+#include <WiFiStatusScene.h>
 
 const int PIN_ENABLE = 47;
 
@@ -191,9 +191,9 @@ void reset_settings(Preferences &preferences) {
   preferences.putString("hostname", "obegransad");
 }
 
-ErrorStatus error_status;
-WiFiStatus wifi_status;
-OTAStatus ota_status;
+ErrorStatusScene error_status_scene;
+WiFiStatusScene wifi_status_scene;
+OTAStatusScene ota_status_scene;
 SceneSwitcher scene_switcher;
 
 void setup() {
@@ -231,7 +231,7 @@ void setup() {
 
   preferences.end();
 
-  set_scene(&wifi_status);
+  set_scene(&wifi_status_scene);
 
   Serial.printf("Connecting to %s", wifi_ssid.c_str());
 
@@ -262,15 +262,15 @@ void setup() {
         // using SPIFFS.end()
         Serial.println("Start updating " + type);
 
-        set_scene(&ota_status);
+        set_scene(&ota_status_scene);
 
-        if (ota_status.set_progress(0)) {
+        if (ota_status_scene.set_progress(0)) {
           render();
         }
       })
       .onEnd([]() {
         Serial.println("\nEnd");
-        if (ota_status.set_progress(100)) {
+        if (ota_status_scene.set_progress(100)) {
           render();
         }
       })
@@ -278,7 +278,7 @@ void setup() {
         int pct = progress * 100 / total;
         Serial.printf("Progress: %u%%\r", pct);
 
-        if (ota_status.set_progress(pct)) {
+        if (ota_status_scene.set_progress(pct)) {
           render();
         }
       })

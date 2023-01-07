@@ -3,9 +3,9 @@
 #include <Globals.h>
 #include <Text.h>
 
-#include "OTAStatus.h"
+#include "OTAStatusScene.h"
 
-void OTAStatus::render(char pixels[PIXELS], const int frame) {
+void OTAStatusScene::render(char pixels[PIXELS], const int frame) {
   Text::renderText(pixels, "OTA", 0, 4, 0);
 
   for (int x = 0; x < COLS * m_progress / 100; x++) {
@@ -13,7 +13,7 @@ void OTAStatus::render(char pixels[PIXELS], const int frame) {
   }
 }
 
-bool OTAStatus::set_progress(int progress) {
+bool OTAStatusScene::set_progress(int progress) {
   if (progress == m_progress) {
     return false;
   }

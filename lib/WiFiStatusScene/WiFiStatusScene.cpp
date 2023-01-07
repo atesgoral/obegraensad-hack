@@ -3,9 +3,9 @@
 #include <Globals.h>
 #include <Text.h>
 
-#include "WiFiStatus.h"
+#include "WiFiStatusScene.h"
 
-void WiFiStatus::render(char pixels[PIXELS], const int frame) {
+void WiFiStatusScene::render(char pixels[PIXELS], const int frame) {
   Text::renderText4x4(pixels, "WiFi");
 
   int x = 7;

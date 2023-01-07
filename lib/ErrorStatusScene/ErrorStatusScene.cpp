@@ -1,9 +1,9 @@
-#include "ErrorStatus.h"
-
 #include <Arduino.h>
 
 #include <Bitmap.h>
 #include <Globals.h>
+
+#include "ErrorStatusScene.h"
 
 // clang-format off
 const char SKULL[PIXELS] = {
@@ -26,7 +26,7 @@ const char SKULL[PIXELS] = {
 };
 // clang-format on
 
-void ErrorStatus::render(char pixels[PIXELS], const int frame) {
+void ErrorStatusScene::render(char pixels[PIXELS], const int frame) {
   if ((random() & 15) < 13) {
     Bitmap::renderBitmap(pixels, SKULL);
   }
