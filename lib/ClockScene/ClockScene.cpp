@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <Text.h>
 
-#include "Clock.h"
+#include "ClockScene.h"
 
 const char NTP_SERVER[] = "pool.ntp.org";
 
@@ -14,7 +14,7 @@ void clockDigits(char *buf, int component) {
   buf[2] = '\0';
 }
 
-bool Clock::init() {
+bool ClockScene::init() {
   const long gmt_offset_sec = -5 * 60 * 60;
   const int dst_offset_sec = 0;
 
@@ -23,7 +23,7 @@ bool Clock::init() {
   return true;
 }
 
-void Clock::render(char pixels[PIXELS], const int frame) {
+void ClockScene::render(char pixels[PIXELS], const int frame) {
   struct tm timeinfo;
 
   if (!getLocalTime(&timeinfo)) {

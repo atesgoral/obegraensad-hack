@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#include "GoL.h"
+#include "GoLScene.h"
 
 #define FRAMES_PER_GENERATION (FPS / 6)
 #define FRAMES_PER_RANDOMIZATION (60 * FPS)
@@ -19,12 +19,12 @@ const int NEIGHBOURS[][2] = {
 };
 // clang-format on
 
-bool GoL::init() {
+bool GoLScene::init() {
   randomize();
   return true;
 }
 
-void GoL::render(char pixels[PIXELS], const int frame) {
+void GoLScene::render(char pixels[PIXELS], const int frame) {
   if (frame > 0 && frame % FRAMES_PER_GENERATION == 0) {
     if (frame % FRAMES_PER_RANDOMIZATION == 0) {
       randomize();
@@ -36,13 +36,13 @@ void GoL::render(char pixels[PIXELS], const int frame) {
   memcpy(static_cast<void *>(pixels), cells, sizeof(cells));
 }
 
-void GoL::randomize() {
+void GoLScene::randomize() {
   for (int i = 0; i < PIXELS; i++) {
     cells[i] = random() & 1;
   }
 }
 
-void GoL::nextGeneration() {
+void GoLScene::nextGeneration() {
   memcpy(static_cast<void *>(next), cells, sizeof(cells));
 
   bool changed = false;

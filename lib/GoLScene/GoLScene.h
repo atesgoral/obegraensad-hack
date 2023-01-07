@@ -1,9 +1,9 @@
-#ifndef GoL_h
-#define GoL_h
+#ifndef GoLScene_h
+#define GoLScene_h
 
 #include <Scene.h>
 
-class GoL : virtual public Scene {
+class GoLScene : virtual public Scene {
 public:
   virtual bool init();
   virtual void render(char pixels[PIXELS], const int frame);

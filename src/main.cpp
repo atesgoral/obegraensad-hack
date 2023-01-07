@@ -7,10 +7,10 @@
 #include <WebSocketsClient.h>
 #include <WiFi.h>
 
-#include <Clock.h>
+#include <ClockScene.h>
 #include <ErrorStatus.h>
 #include <Globals.h>
-#include <GoL.h>
+#include <GoLScene.h>
 #include <OTAStatus.h>
 #include <Scene.h>
 #include <SceneSwitcher.h>
@@ -303,8 +303,8 @@ void setup() {
 
   socketIO.onEvent(socketIOEvent);
 
-  scene_switcher.append_scene(new Clock(), 10);
-  scene_switcher.append_scene(new GoL(), 20);
+  scene_switcher.append_scene(new ClockScene(), 10);
+  scene_switcher.append_scene(new GoLScene(), 20);
 
   set_scene(&scene_switcher);
 }
