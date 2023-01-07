@@ -12,7 +12,7 @@ typedef struct SceneNode {
 
 class SceneSwitcher : virtual public Scene {
 public:
-  virtual void render(int *pixels, const int frame);
+  virtual void render(int pixels[PIXELS], const int frame);
   void append_scene(Scene *scene, int duration);
 
 private:

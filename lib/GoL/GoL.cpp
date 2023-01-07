@@ -24,7 +24,7 @@ bool GoL::init() {
   return true;
 }
 
-void GoL::render(int *pixels, const int frame) {
+void GoL::render(int pixels[PIXELS], const int frame) {
   if (frame > 0 && frame % FRAMES_PER_GENERATION == 0) {
     if (frame % FRAMES_PER_RANDOMIZATION == 0) {
       randomize();

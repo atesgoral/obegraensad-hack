@@ -1,13 +1,12 @@
 #ifndef GoL_h
 #define GoL_h
 
-#include <Globals.h>
 #include <Scene.h>
 
 class GoL : virtual public Scene {
 public:
   virtual bool init();
-  virtual void render(int *pixels, const int frame);
+  virtual void render(int pixels[PIXELS], const int frame);
 
 private:
   int cells[PIXELS];

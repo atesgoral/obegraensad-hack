@@ -5,7 +5,7 @@
 
 #include "OTAStatus.h"
 
-void OTAStatus::render(int *pixels, const int frame) {
+void OTAStatus::render(int pixels[PIXELS], const int frame) {
   Text::renderText(pixels, "OTA", 0, 4, 0);
 
   for (int x = 0; x < COLS * m_progress / 100; x++) {

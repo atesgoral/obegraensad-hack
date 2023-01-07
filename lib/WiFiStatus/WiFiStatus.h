@@ -5,7 +5,7 @@
 
 class WiFiStatus : virtual public Scene {
 public:
-  virtual void render(int *pixels, const int frame);
+  virtual void render(int pixels[PIXELS], const int frame);
 };
 
 #endif

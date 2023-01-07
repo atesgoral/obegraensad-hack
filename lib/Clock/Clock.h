@@ -6,7 +6,7 @@
 class Clock : virtual public Scene {
 public:
   virtual bool init();
-  virtual void render(int *pixels, const int frame);
+  virtual void render(int pixels[PIXELS], const int frame);
 };
 
 #endif
