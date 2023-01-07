@@ -8,8 +8,11 @@
 #include <WiFi.h>
 
 #include <Clock.h>
+#include <Globals.h>
 #include <GoL.h>
+#include <OTAStatus.h>
 #include <Scene.h>
+#include <WiFiStatus.h>
 
 const int PIN_ENABLE = 47;
 
@@ -24,13 +27,8 @@ const int PWM_FREQUENCY = 1000;
 const int PWM_RESOLUTION = 10;
 const int PWM_DUTY_CYCLE_MAX = 1 << PWM_RESOLUTION;
 
-const int FPS = 60;
-
-const int ROWS = 16;
-const int COLS = 16;
-
 // clang-format off
-const int POSITIONS[ROWS * COLS] = {
+const int POSITIONS[PIXELS] = {
   0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
   0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
   0x27, 0x26, 0x25, 0x24, 0x23, 0x22, 0x21, 0x20, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
@@ -51,7 +49,7 @@ const int POSITIONS[ROWS * COLS] = {
 // clang-format on
 
 void draw(const int *pixels) {
-  for (int idx = 0; idx < ROWS * COLS; idx++) {
+  for (int idx = 0; idx < PIXELS; idx++) {
     const int pos = POSITIONS[idx];
     const int col = pos & 15;
     const int row = pos >> 4;
@@ -65,6 +63,35 @@ void draw(const int *pixels) {
 
   digitalWrite(PIN_LATCH, HIGH);
   digitalWrite(PIN_LATCH, LOW);
+}
+
+int frame = 0;
+int pixels[PIXELS] = {};
+
+Scene *current_scene = NULL;
+
+void set_scene(Scene *scene) {
+  if (current_scene) {
+    current_scene->cleanup();
+  }
+
+  current_scene = scene;
+
+  if (current_scene) {
+    current_scene->init();
+  }
+}
+
+void render() {
+  memset(pixels, 0, sizeof(pixels));
+
+  if (current_scene) {
+    current_scene->render(pixels, frame, FPS);
+  }
+
+  draw(pixels);
+
+  frame++;
 }
 
 SocketIOclient socketIO;
@@ -162,9 +189,28 @@ void reset_settings(Preferences &preferences) {
   preferences.putString("hostname", "obegransad");
 }
 
-Scene *current_scene = 0;
+WiFiStatus wifi_status;
+OTAStatus ota_status;
+Clock clock_scene;
+GoL gol_scene;
 
 void setup() {
+  ledcSetup(PWM_CHANNEL, PWM_FREQUENCY, PWM_RESOLUTION);
+  ledcAttachPin(PIN_ENABLE, PWM_CHANNEL);
+
+  pinMode(PIN_SWITCH, INPUT_PULLUP);
+  pinMode(BUILTIN_LED, OUTPUT);
+
+  pinMode(PIN_LATCH, OUTPUT);
+  pinMode(PIN_CLOCK, OUTPUT);
+  pinMode(PIN_DATA, OUTPUT);
+
+  digitalWrite(PIN_DATA, LOW);
+  digitalWrite(PIN_LATCH, LOW);
+  digitalWrite(PIN_CLOCK, LOW);
+
+  prevSwitchState = !digitalRead(PIN_SWITCH);
+
   Serial.begin(115200);
 
   delay(1000);
@@ -183,13 +229,16 @@ void setup() {
 
   preferences.end();
 
+  set_scene(&wifi_status);
+
   Serial.printf("Connecting to %s", wifi_ssid.c_str());
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
 
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+    delay(1000 / FPS);
+    render();
     Serial.print(".");
   }
 
@@ -202,18 +251,34 @@ void setup() {
       .onStart([]() {
         String type;
 
-        if (ArduinoOTA.getCommand() == U_FLASH)
+        if (ArduinoOTA.getCommand() == U_FLASH) {
           type = "sketch";
-        else // U_SPIFFS
+        } else { // U_SPIFFS
           type = "filesystem";
-
+        }
         // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS
         // using SPIFFS.end()
         Serial.println("Start updating " + type);
+
+        set_scene(&ota_status);
+
+        if (ota_status.set_progress(0)) {
+          render();
+        }
       })
-      .onEnd([]() { Serial.println("\nEnd"); })
+      .onEnd([]() {
+        Serial.println("\nEnd");
+        if (ota_status.set_progress(100)) {
+          render();
+        }
+      })
       .onProgress([](unsigned int progress, unsigned int total) {
-        Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+        int pct = progress * 100 / total;
+        Serial.printf("Progress: %u%%\r", pct);
+
+        if (ota_status.set_progress(pct)) {
+          render();
+        }
       })
       .onError([](ota_error_t error) {
         Serial.printf("Error[%u]: ", error);
@@ -236,29 +301,8 @@ void setup() {
 
   socketIO.onEvent(socketIOEvent);
 
-  ledcSetup(PWM_CHANNEL, PWM_FREQUENCY, PWM_RESOLUTION);
-  ledcAttachPin(PIN_ENABLE, PWM_CHANNEL);
-
-  pinMode(PIN_SWITCH, INPUT_PULLUP);
-  pinMode(BUILTIN_LED, OUTPUT);
-
-  pinMode(PIN_LATCH, OUTPUT);
-  pinMode(PIN_CLOCK, OUTPUT);
-  pinMode(PIN_DATA, OUTPUT);
-
-  digitalWrite(PIN_DATA, LOW);
-  digitalWrite(PIN_LATCH, LOW);
-  digitalWrite(PIN_CLOCK, LOW);
-
-  prevSwitchState = !digitalRead(PIN_SWITCH);
-
-  // current_scene = new GoL<COLS, ROWS>();
-  current_scene = new Clock();
-  current_scene->init();
+  set_scene(&clock_scene);
 }
-
-int frame = 0;
-int pixels[ROWS * COLS] = {};
 
 void loop() {
   ArduinoOTA.handle();
@@ -280,15 +324,7 @@ void loop() {
   // ledcWrite(PWM_CHANNEL, seconds % PWM_DUTY_CYCLE_MAX);
   // ledcWrite(PWM_CHANNEL, (frame * 60) % PWM_DUTY_CYCLE_MAX);
 
-  memset(pixels, 0, sizeof(pixels));
-
-  if (current_scene) {
-    current_scene->render(pixels, frame, FPS);
-  }
-
-  draw(pixels);
-
-  frame++;
+  render();
 
   // TODO make this based on elapsed time
   delay(1000 / FPS);

@@ -134,15 +134,23 @@ int Text::renderChar(int *pixels, char c, int x, int y) {
   return W;
 }
 
-void Text::renderText(int *pixels, const char *text, int x, int y, int k) {
+void Text::renderText(int *pixels, const char *text, int x, int y,
+                      int kerning) {
   int o = 0;
   int len = strlen(text);
 
   for (int i = 0; i < len; i++) {
-    o += renderChar(pixels, text[i], x + o, y) + k;
+    o += renderChar(pixels, text[i], x + o, y) + kerning;
   }
 }
 
 void Text::renderText(int *pixels, const char *text, int x, int y) {
   renderText(pixels, text, x, y, 1);
+}
+
+void Text::renderText4x4(int *pixels, const char text[4]) {
+  renderChar(pixels, text[0], 2, 0);
+  renderChar(pixels, text[1], 9, 0);
+  renderChar(pixels, text[2], 2, 9);
+  renderChar(pixels, text[3], 9, 9);
 }

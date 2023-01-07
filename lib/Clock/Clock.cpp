@@ -6,13 +6,12 @@
 const char NTP_SERVER[] = "pool.ntp.org";
 
 void clockDigits(char *buf, int component) {
-  snprintf(buf, sizeof(buf), "%02d", component);
+  int first_digit = component / 10;
+  int second_digit = component % 10;
 
-  for (int i = 0; i < 2; i++) {
-    if (buf[i] == '0') {
-      buf[i] = 'O';
-    }
-  }
+  buf[0] = first_digit ? first_digit + '0' : 'O';
+  buf[1] = second_digit ? second_digit + '0' : 'O';
+  buf[2] = '\0';
 }
 
 bool Clock::init() {
@@ -31,13 +30,11 @@ void Clock::render(int *pixels, const int frame, const int fps) {
     return;
   }
 
-  char buf[2 + 1];
+  char hhmm[4 + 1];
 
-  clockDigits(buf, timeinfo.tm_hour);
-  Text::renderText(pixels, buf, 2, 0, 2);
-
-  clockDigits(buf, timeinfo.tm_min);
-  Text::renderText(pixels, buf, 2, 9, 2);
+  clockDigits(hhmm, timeinfo.tm_hour);
+  clockDigits(hhmm + 2, timeinfo.tm_min);
+  Text::renderText4x4(pixels, hhmm);
 
   if (timeinfo.tm_sec & 1) {
     pixels[7 * 16 + 7] = 1;

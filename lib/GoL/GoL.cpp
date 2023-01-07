@@ -2,8 +2,8 @@
 
 #include "GoL.h"
 
-#define FRAMES_PER_GENERATION 10
-#define FRAMES_PER_RANDOMIZATION (60 * 60)
+#define FRAMES_PER_GENERATION (FPS / 6)
+#define FRAMES_PER_RANDOMIZATION (60 * FPS)
 
 // Neighbour offsets
 // clang-format off
@@ -19,13 +19,12 @@ const int NEIGHBOURS[][2] = {
 };
 // clang-format on
 
-template <int COLS, int ROWS> bool GoL<COLS, ROWS>::init() {
+bool GoL::init() {
   randomize();
   return true;
 }
 
-template <int COLS, int ROWS>
-void GoL<COLS, ROWS>::render(int *pixels, const int frame, const int fps) {
+void GoL::render(int *pixels, const int frame, const int fps) {
   if (frame > 0 && frame % FRAMES_PER_GENERATION == 0) {
     if (frame % FRAMES_PER_RANDOMIZATION == 0) {
       randomize();
@@ -37,13 +36,13 @@ void GoL<COLS, ROWS>::render(int *pixels, const int frame, const int fps) {
   memcpy(static_cast<void *>(pixels), cells, sizeof(cells));
 }
 
-template <int COLS, int ROWS> void GoL<COLS, ROWS>::randomize() {
-  for (int i = 0; i < ROWS * COLS; i++) {
+void GoL::randomize() {
+  for (int i = 0; i < PIXELS; i++) {
     cells[i] = random() & 1;
   }
 }
 
-template <int COLS, int ROWS> void GoL<COLS, ROWS>::nextGeneration() {
+void GoL::nextGeneration() {
   memcpy(static_cast<void *>(next), cells, sizeof(cells));
 
   bool changed = false;
@@ -56,10 +55,10 @@ template <int COLS, int ROWS> void GoL<COLS, ROWS>::nextGeneration() {
         int nrow = (row + NEIGHBOURS[i][0] + ROWS) % ROWS;
         int ncol = (col + NEIGHBOURS[i][1] + COLS) % COLS;
 
-        neighbours += cells[nrow * COLS + ncol];
+        neighbours += cells[AT(ncol, nrow)];
       }
 
-      int idx = row * COLS + col;
+      int idx = AT(col, row);
 
       if (cells[idx] == 1) {
         if (neighbours < 2 || neighbours > 3) {
@@ -81,5 +80,3 @@ template <int COLS, int ROWS> void GoL<COLS, ROWS>::nextGeneration() {
     randomize();
   }
 }
-
-GoL<16, 16> gol;
