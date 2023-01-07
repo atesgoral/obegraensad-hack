@@ -13,6 +13,7 @@
 #include <GoL.h>
 #include <OTAStatus.h>
 #include <Scene.h>
+#include <SceneSwitcher.h>
 #include <WiFiStatus.h>
 
 const int PIN_ENABLE = 47;
@@ -193,8 +194,7 @@ void reset_settings(Preferences &preferences) {
 ErrorStatus error_status;
 WiFiStatus wifi_status;
 OTAStatus ota_status;
-Clock clock_scene;
-GoL gol_scene;
+SceneSwitcher scene_switcher;
 
 void setup() {
   ledcSetup(PWM_CHANNEL, PWM_FREQUENCY, PWM_RESOLUTION);
@@ -303,9 +303,10 @@ void setup() {
 
   socketIO.onEvent(socketIOEvent);
 
-  // set_scene(&error_status);
-  set_scene(&clock_scene);
-  // set_scene(&gol_scene);
+  scene_switcher.append_scene(new Clock(), 10);
+  scene_switcher.append_scene(new GoL(), 20);
+
+  set_scene(&scene_switcher);
 }
 
 void loop() {
