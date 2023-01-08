@@ -11,6 +11,7 @@
 #include <ErrorStatusScene.h>
 #include <Globals.h>
 #include <GoLScene.h>
+#include <MIDIScene.h>
 #include <OTAStatusScene.h>
 #include <PWMTestScene.h>
 #include <Scene.h>
@@ -75,7 +76,7 @@ Scene *current_scene = NULL;
 
 void set_scene(Scene *scene) {
   if (current_scene) {
-    current_scene->cleanup();
+    // current_scene->cleanup();
   }
 
   current_scene = scene;
@@ -161,6 +162,14 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t *payload,
           on = !on;
           ledcWrite(PWM_CHANNEL, on ? 0 : PWM_DUTY_CYCLE_MAX);
           // TODO save last state in EPROM
+        }
+      } else if (eventName == "midi") {
+        if (current_scene) {
+          auto payload = doc[1];
+          int status = payload["status"];
+          int data1 = payload["data1"];
+          int data2 = payload["data2"];
+          current_scene->handle_midi(status, data1, data2);
         }
       }
     }
@@ -307,7 +316,8 @@ void setup() {
   scene_switcher.append_scene(new ClockScene(), 10);
   scene_switcher.append_scene(new GoLScene(), 20);
 
-  set_scene(new GoLScene());
+  // set_scene(new GoLScene());
+  set_scene(new MIDIScene());
   // set_scene(new PWMTestScene());
 
   // set_scene(&scene_switcher);
