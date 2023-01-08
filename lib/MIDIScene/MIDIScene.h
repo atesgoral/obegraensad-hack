@@ -6,10 +6,10 @@
 class MIDIScene : virtual public Scene {
 public:
   virtual void render(char pixels[PIXELS], const int frame);
-  virtual void handle_midi(char status, char data1, char data2);
+  virtual void handle_midi(char status, char channel, char value);
 
 private:
-  char data[COLS] = {};
+  char values[COLS] = {};
 };
 
 #endif
