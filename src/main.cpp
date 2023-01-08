@@ -12,6 +12,7 @@
 #include <Globals.h>
 #include <GoLScene.h>
 #include <OTAStatusScene.h>
+#include <PWMTestScene.h>
 #include <Scene.h>
 #include <SceneSwitcher.h>
 #include <WiFiStatusScene.h>
@@ -306,7 +307,10 @@ void setup() {
   scene_switcher.append_scene(new ClockScene(), 10);
   scene_switcher.append_scene(new GoLScene(), 20);
 
-  set_scene(&scene_switcher);
+  set_scene(new GoLScene());
+  // set_scene(new PWMTestScene());
+
+  // set_scene(&scene_switcher);
 }
 
 void loop() {
@@ -325,9 +329,6 @@ void loop() {
       ledcWrite(PWM_CHANNEL, on ? 0 : PWM_DUTY_CYCLE_MAX);
     }
   }
-
-  // ledcWrite(PWM_CHANNEL, seconds % PWM_DUTY_CYCLE_MAX);
-  // ledcWrite(PWM_CHANNEL, (frame * 60) % PWM_DUTY_CYCLE_MAX);
 
   render();
 
