@@ -6,6 +6,7 @@
 #include <SocketIOclient.h>
 #include <WebSocketsClient.h>
 #include <WiFi.h>
+#include <esp_task_wdt.h>
 
 #include <ClockScene.h>
 #include <ErrorStatusScene.h>
@@ -54,6 +55,8 @@ const int POSITIONS[PIXELS] = {
 
 typedef struct RenderingContext {
   char pixels[PIXELS] = {};
+  int dc_max = 0x1e;
+  int dcs[4] = {0, 0x05, 0x1a, 0x7f};
 } RenderingContext;
 
 RenderingContext rendering_context;
@@ -143,9 +146,15 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t *payload,
         if (current_scene) {
           auto payload = doc[1];
           int status = payload["status"];
-          int data1 = payload["data1"];
-          int data2 = payload["data2"];
-          current_scene->handle_midi(status, data1, data2);
+          int channel = payload["data1"];
+          int value = payload["data2"];
+          current_scene->handle_midi(status, channel, value);
+
+          if (channel < 4) {
+            rendering_context.dcs[channel] = value;
+          } else if (channel == 4) {
+            rendering_context.dc_max = value ? value : 1;
+          }
         }
       }
     }
@@ -194,35 +203,25 @@ void render() {
   frame++;
 }
 
-// void draw(const char pixels[PIXELS]) {
-//   for (int idx = 0; idx < PIXELS; idx++) {
-//     const int pos = POSITIONS[idx];
-//     const int col = pos & 15;
-//     const int row = pos >> 4;
-
-//     const int on = pixels[pos];
-
-//     digitalWrite(PIN_DATA, on ? HIGH : LOW);
-//     digitalWrite(PIN_CLOCK, HIGH);
-//     digitalWrite(PIN_CLOCK, LOW);
-//   }
-
-//   digitalWrite(PIN_LATCH, HIGH);
-//   digitalWrite(PIN_LATCH, LOW);
-// }
-
 void draw_loop(void *pRenderingContext) {
   RenderingContext &ctx = *static_cast<RenderingContext *>(pRenderingContext);
 
-  int frame = 0;
+  int cycle = 0;
 
   for (;;) {
+    int dc = cycle % ctx.dc_max;
+    int scaled_dcs[4];
+
+    for (int i = 0; i < 4; i++) {
+      scaled_dcs[i] = ctx.dcs[i] * ctx.dc_max / 0x7f;
+    }
+
     for (int idx = 0; idx < PIXELS; idx++) {
       const int pos = POSITIONS[idx];
       const int col = pos & 15;
       const int row = pos >> 4;
 
-      const int on = ctx.pixels[pos];
+      char on = scaled_dcs[ctx.pixels[pos]] > dc;
 
       digitalWrite(PIN_DATA, on ? HIGH : LOW);
       digitalWrite(PIN_CLOCK, HIGH);
@@ -231,6 +230,8 @@ void draw_loop(void *pRenderingContext) {
 
     digitalWrite(PIN_LATCH, HIGH);
     digitalWrite(PIN_LATCH, LOW);
+
+    cycle++;
   }
 }
 
@@ -344,21 +345,25 @@ void setup() {
   scene_switcher.append_scene(new ClockScene(), 10);
   scene_switcher.append_scene(new GoLScene(), 20);
 
-  set_scene(new GoLScene());
+  // set_scene(new GoLScene());
   // set_scene(new MIDIScene());
-  // set_scene(new PWMTestScene());
+  set_scene(new PWMTestScene());
 
   // set_scene(&scene_switcher);
+
+  esp_task_wdt_init(5000, false);
 
   TaskHandle_t task_andle = NULL;
   auto result = xTaskCreatePinnedToCore(
       &draw_loop, "draw_loop", configMINIMAL_STACK_SIZE, &rendering_context,
-      tskIDLE_PRIORITY, &task_andle, 0);
+      2 | portPRIVILEGE_BIT, &task_andle, 0);
   if (result == pdPASS) {
     Serial.println("Render loop task created");
   } else {
     Serial.println("Failed to create render loop task");
   }
+
+  // Serial.println("Core id" + xPortGetCoreID());
 }
 
 void loop() {
