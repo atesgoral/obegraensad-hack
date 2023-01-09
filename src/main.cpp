@@ -52,25 +52,13 @@ const int POSITIONS[PIXELS] = {
 };
 // clang-format on
 
-void draw(const char pixels[PIXELS]) {
-  for (int idx = 0; idx < PIXELS; idx++) {
-    const int pos = POSITIONS[idx];
-    const int col = pos & 15;
-    const int row = pos >> 4;
+typedef struct RenderingContext {
+  char pixels[PIXELS] = {};
+} RenderingContext;
 
-    const int on = pixels[pos];
-
-    digitalWrite(PIN_DATA, on ? HIGH : LOW);
-    digitalWrite(PIN_CLOCK, HIGH);
-    digitalWrite(PIN_CLOCK, LOW);
-  }
-
-  digitalWrite(PIN_LATCH, HIGH);
-  digitalWrite(PIN_LATCH, LOW);
-}
+RenderingContext rendering_context;
 
 int frame = 0;
-char pixels[PIXELS] = {};
 
 Scene *current_scene = NULL;
 
@@ -84,18 +72,6 @@ void set_scene(Scene *scene) {
   if (current_scene) {
     current_scene->init();
   }
-}
-
-void render() {
-  memset(pixels, 0, sizeof(pixels));
-
-  if (current_scene) {
-    current_scene->render(pixels, frame);
-  }
-
-  draw(pixels);
-
-  frame++;
 }
 
 SocketIOclient socketIO;
@@ -205,6 +181,58 @@ ErrorStatusScene error_status_scene;
 WiFiStatusScene wifi_status_scene;
 OTAStatusScene ota_status_scene;
 SceneSwitcher scene_switcher;
+
+void render() {
+  memset(rendering_context.pixels, 0, sizeof(rendering_context.pixels));
+
+  if (current_scene) {
+    current_scene->render(rendering_context.pixels, frame);
+  }
+
+  // draw(pixels);
+
+  frame++;
+}
+
+// void draw(const char pixels[PIXELS]) {
+//   for (int idx = 0; idx < PIXELS; idx++) {
+//     const int pos = POSITIONS[idx];
+//     const int col = pos & 15;
+//     const int row = pos >> 4;
+
+//     const int on = pixels[pos];
+
+//     digitalWrite(PIN_DATA, on ? HIGH : LOW);
+//     digitalWrite(PIN_CLOCK, HIGH);
+//     digitalWrite(PIN_CLOCK, LOW);
+//   }
+
+//   digitalWrite(PIN_LATCH, HIGH);
+//   digitalWrite(PIN_LATCH, LOW);
+// }
+
+void draw_loop(void *pRenderingContext) {
+  RenderingContext &ctx = *static_cast<RenderingContext *>(pRenderingContext);
+
+  int frame = 0;
+
+  for (;;) {
+    for (int idx = 0; idx < PIXELS; idx++) {
+      const int pos = POSITIONS[idx];
+      const int col = pos & 15;
+      const int row = pos >> 4;
+
+      const int on = ctx.pixels[pos];
+
+      digitalWrite(PIN_DATA, on ? HIGH : LOW);
+      digitalWrite(PIN_CLOCK, HIGH);
+      digitalWrite(PIN_CLOCK, LOW);
+    }
+
+    digitalWrite(PIN_LATCH, HIGH);
+    digitalWrite(PIN_LATCH, LOW);
+  }
+}
 
 void setup() {
   ledcSetup(PWM_CHANNEL, PWM_FREQUENCY, PWM_RESOLUTION);
@@ -316,11 +344,21 @@ void setup() {
   scene_switcher.append_scene(new ClockScene(), 10);
   scene_switcher.append_scene(new GoLScene(), 20);
 
-  // set_scene(new GoLScene());
-  set_scene(new MIDIScene());
+  set_scene(new GoLScene());
+  // set_scene(new MIDIScene());
   // set_scene(new PWMTestScene());
 
   // set_scene(&scene_switcher);
+
+  TaskHandle_t task_andle = NULL;
+  auto result = xTaskCreatePinnedToCore(
+      &draw_loop, "draw_loop", configMINIMAL_STACK_SIZE, &rendering_context,
+      tskIDLE_PRIORITY, &task_andle, 0);
+  if (result == pdPASS) {
+    Serial.println("Render loop task created");
+  } else {
+    Serial.println("Failed to create render loop task");
+  }
 }
 
 void loop() {
