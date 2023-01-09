@@ -9,7 +9,7 @@ void OTAStatusScene::render(char pixels[PIXELS], const int frame) {
   Text::renderText(pixels, "OTA", 0, 4, 0);
 
   for (int x = 0; x < COLS * m_progress / 100; x++) {
-    pixels[AT(x, 15)] = 1;
+    pixels[AT(x, 15)] = PIXEL_ON;
   }
 }
 

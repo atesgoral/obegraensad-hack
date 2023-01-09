@@ -77,7 +77,9 @@ void GoLScene::nextGeneration() {
   }
 
   if (changed) {
-    memcpy(static_cast<void *>(cells), next, sizeof(cells));
+    for (int i = 0; i < PIXELS; i++) {
+      cells[i] = next[i] ? PIXEL_ON : PIXEL_OFF;
+    }
   } else {
     randomize();
   }

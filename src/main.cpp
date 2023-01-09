@@ -9,10 +9,10 @@
 #include <esp_task_wdt.h>
 
 #include <ClockScene.h>
-#include <ErrorStatusScene.h>
 #include <Globals.h>
 #include <GoLScene.h>
 #include <MIDIScene.h>
+#include <MarioScene.h>
 #include <OTAStatusScene.h>
 #include <PWMTestScene.h>
 #include <Scene.h>
@@ -66,10 +66,6 @@ int frame = 0;
 Scene *current_scene = NULL;
 
 void set_scene(Scene *scene) {
-  if (current_scene) {
-    // current_scene->cleanup();
-  }
-
   current_scene = scene;
 
   if (current_scene) {
@@ -148,13 +144,14 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t *payload,
           int status = payload["status"];
           int channel = payload["data1"];
           int value = payload["data2"];
+
           current_scene->handle_midi(status, channel, value);
 
-          if (channel < 4) {
-            rendering_context.dcs[channel] = value;
-          } else if (channel == 4) {
-            rendering_context.dc_max = value ? value : 1;
-          }
+          // if (channel < 4) {
+          //   rendering_context.dcs[channel] = value;
+          // } else if (channel == 4) {
+          //   rendering_context.dc_max = value ? value : 1;
+          // }
         }
       }
     }
@@ -186,7 +183,6 @@ void reset_settings(Preferences &preferences) {
   preferences.putString("hostname", "obegransad");
 }
 
-ErrorStatusScene error_status_scene;
 WiFiStatusScene wifi_status_scene;
 OTAStatusScene ota_status_scene;
 SceneSwitcher scene_switcher;
@@ -221,7 +217,7 @@ void draw_loop(void *pRenderingContext) {
       const int col = pos & 15;
       const int row = pos >> 4;
 
-      char on = scaled_dcs[ctx.pixels[pos]] > dc;
+      char on = scaled_dcs[ctx.pixels[pos] & 3] > dc;
 
       digitalWrite(PIN_DATA, on ? HIGH : LOW);
       digitalWrite(PIN_CLOCK, HIGH);
@@ -345,11 +341,12 @@ void setup() {
   scene_switcher.append_scene(new ClockScene(), 10);
   scene_switcher.append_scene(new GoLScene(), 20);
 
-  // set_scene(new GoLScene());
-  // set_scene(new MIDIScene());
-  set_scene(new PWMTestScene());
+  set_scene(new GoLScene());
+  set_scene(new MIDIScene());
+  // set_scene(new PWMTestScene());
 
-  // set_scene(&scene_switcher);
+  // set_scene(new MarioScene());
+  set_scene(&scene_switcher);
 
   esp_task_wdt_init(5000, false);
 
@@ -362,8 +359,6 @@ void setup() {
   } else {
     Serial.println("Failed to create render loop task");
   }
-
-  // Serial.println("Core id" + xPortGetCoreID());
 }
 
 void loop() {

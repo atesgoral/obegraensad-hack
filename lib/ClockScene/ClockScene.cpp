@@ -37,10 +37,10 @@ void ClockScene::render(char pixels[PIXELS], const int frame) {
   Text::renderText4x4(pixels, hhmm);
 
   if (timeinfo.tm_sec & 1) {
-    pixels[7 * 16 + 7] = 1;
-    pixels[8 * 16 + 8] = 1;
+    pixels[7 * 16 + 7] = PIXEL_ON;
+    pixels[8 * 16 + 8] = PIXEL_ON;
   } else {
-    pixels[7 * 16 + 8] = 1;
-    pixels[8 * 16 + 7] = 1;
+    pixels[7 * 16 + 8] = PIXEL_ON;
+    pixels[8 * 16 + 7] = PIXEL_ON;
   }
 }

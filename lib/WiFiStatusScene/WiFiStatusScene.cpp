@@ -24,5 +24,5 @@ void WiFiStatusScene::render(char pixels[PIXELS], const int frame) {
     break;
   }
 
-  pixels[y * ROWS + x] = 1;
+  pixels[y * ROWS + x] = PIXEL_ON;
 }

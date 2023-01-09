@@ -5,7 +5,7 @@ void MIDIScene::render(char pixels[PIXELS], const int frame) {
     char value = values[x] >> 3;
 
     for (int y = 0; y <= value; y++) {
-      pixels[AT(x, 15 - y)] = 1;
+      pixels[AT(x, 15 - y)] = PIXEL_ON;
     }
   }
 }

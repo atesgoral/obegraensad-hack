@@ -110,7 +110,7 @@ const entry MONOGRAM[] = {
 };
 // clang-format on
 
-char current_color = 1;
+char current_color = PIXEL_ON;
 
 void Text::setColor(char color) { current_color = color; }
 
