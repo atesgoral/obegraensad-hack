@@ -5,6 +5,8 @@
 
 namespace Text {
 
+void setColor(char color);
+
 int renderChar(char pixels[PIXELS], char c, int x, int y);
 
 void renderText(char pixels[PIXELS], const char *text, int x, int y,

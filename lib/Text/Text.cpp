@@ -110,6 +110,10 @@ const entry MONOGRAM[] = {
 };
 // clang-format on
 
+char current_color = 1;
+
+void Text::setColor(char color) { current_color = color; }
+
 int Text::renderChar(char pixels[PIXELS], char c, int x, int y) {
   const char *data;
   const int len = sizeof(MONOGRAM) / sizeof(MONOGRAM[0]);
@@ -126,7 +130,7 @@ int Text::renderChar(char pixels[PIXELS], char c, int x, int y) {
       const int X = c + x;
       const int Y = r + y;
       if (X >= 0 && X < 16 && Y >= 0 && Y < 16 && data[r] & (1 << c)) {
-        pixels[Y * 16 + X] = 1;
+        pixels[Y * 16 + X] = current_color;
       }
     }
   }
