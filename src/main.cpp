@@ -345,19 +345,19 @@ void setup() {
 
   scene_switcher.append_scene(new ClockScene(), 10);
   scene_switcher.append_scene(new GoLScene(), 20);
+  scene_switcher.append_scene(new MarioScene(), 10);
 
-  set_scene(new GoLScene());
-  set_scene(new MIDIScene());
+  // set_scene(new MIDIScene());
   // set_scene(new PWMTestScene());
 
-  // set_scene(new MarioScene());
   set_scene(&scene_switcher);
 
   esp_task_wdt_init(5000, false);
 
   TaskHandle_t task_handle = NULL;
   // UBaseType_t priority = 2 | portPRIVILEGE_BIT;
-  UBaseType_t task_priority = 0;
+  UBaseType_t task_priority = tskIDLE_PRIORITY + 1;
+  // vTaskPrioritySet
 
   auto result = xTaskCreatePinnedToCore(
       &draw_loop, "draw_loop", configMINIMAL_STACK_SIZE, &rendering_context,
