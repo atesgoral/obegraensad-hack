@@ -54,7 +54,10 @@ const int POSITIONS[PIXELS] = {
 // clang-format on
 
 typedef struct RenderingContext {
-  char pixels[PIXELS] = {};
+  char pixels1[PIXELS] = {};
+  char pixels2[PIXELS] = {};
+  char *pixels = pixels1;
+  char *buffer = pixels2;
   int dc_max = 0x1e;
   int dcs[4] = {0, 0x05, 0x1a, 0x7f};
 } RenderingContext;
@@ -188,15 +191,17 @@ OTAStatusScene ota_status_scene;
 SceneSwitcher scene_switcher;
 
 void render() {
-  memset(rendering_context.pixels, 0, sizeof(rendering_context.pixels));
+  memset(rendering_context.pixels, 0, sizeof(rendering_context.pixels1));
 
   if (current_scene) {
     current_scene->render(rendering_context.pixels, frame);
   }
 
-  // draw(pixels);
-
   frame++;
+
+  char *swap = rendering_context.buffer;
+  rendering_context.buffer = rendering_context.pixels;
+  rendering_context.pixels = swap;
 }
 
 void draw_loop(void *pRenderingContext) {
@@ -217,7 +222,7 @@ void draw_loop(void *pRenderingContext) {
       const int col = pos & 15;
       const int row = pos >> 4;
 
-      char on = scaled_dcs[ctx.pixels[pos] & 3] > dc;
+      char on = scaled_dcs[ctx.buffer[pos] & 3] > dc;
 
       digitalWrite(PIN_DATA, on ? HIGH : LOW);
       digitalWrite(PIN_CLOCK, HIGH);
@@ -350,10 +355,13 @@ void setup() {
 
   esp_task_wdt_init(5000, false);
 
-  TaskHandle_t task_andle = NULL;
+  TaskHandle_t task_handle = NULL;
+  // UBaseType_t priority = 2 | portPRIVILEGE_BIT;
+  UBaseType_t task_priority = 0;
+
   auto result = xTaskCreatePinnedToCore(
       &draw_loop, "draw_loop", configMINIMAL_STACK_SIZE, &rendering_context,
-      2 | portPRIVILEGE_BIT, &task_andle, 0);
+      task_priority, &task_handle, 0);
   if (result == pdPASS) {
     Serial.println("Render loop task created");
   } else {
