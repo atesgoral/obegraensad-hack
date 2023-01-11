@@ -34,7 +34,7 @@ void GoLScene::render(char pixels[PIXELS], const int frame) {
   }
 
   for (int i = 0; i < PIXELS; i++) {
-    pixels[i] = cells[i];
+    pixels[i] = cells[i] ? PIXEL_ON : PIXEL_OFF;
   }
 }
 
@@ -78,7 +78,7 @@ void GoLScene::nextGeneration() {
 
   if (changed) {
     for (int i = 0; i < PIXELS; i++) {
-      cells[i] = next[i] ? PIXEL_ON : PIXEL_OFF;
+      cells[i] = next[i];
     }
   } else {
     randomize();
