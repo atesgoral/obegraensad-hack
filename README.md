@@ -19,10 +19,12 @@ In portrait mode:
   .
 ```
 
-- Pixel width & height: ~1/2"
-- Horizontal distance between pixels (A-B): ~9/32"
-- Vertical distance between pixels (A-C): ~11/16"
 - 16x16 pixels
-- Total width: ~12 3/8"
-- Total height: ~18 5/16"
-- Aspect ratio: ~27:40
+- Pixel width & height: ~1/2" = 0.5
+- Horizontal spacing between pixels: ~9/32" = 0.28125 (0.78125 OC)
+- Vertical spacing between pixels: ~11/16" = 0.6875 (1.1875 OC)
+- Rendering width: ~12 3/8" = 12.375
+- Rendering height: ~18 5/16" = 18.3125
+- Rendering aspect ratio: ~27:40
+- Screen width: 13" = 13
+- Screen height: 19 1/4" = 19.25
