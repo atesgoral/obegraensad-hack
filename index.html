@@ -114,14 +114,43 @@
       store<u8>(x + y * COLS, color);
     }
 
+    function clamp(x: f64, min: f64, max: f64): f64 {
+      return Math.max(min, Math.min(max, x));
+    }
+
+    function smoothstep(edge0: f64, edge1: f64, x: f64): f64 {
+      let t: f64 = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+      return t * t * (3 - 2 * t);
+    }
+
     export function render(frame: i32): void {
       ${code}
     }
   </script>
   <script type="text/assemblyscript" id="sample-code">
-    //set(frame & 255, ON);
-    for (let i: u8 = 0; i <= 255; i++) {
-      set(i, ON);
+    const s: f64 = <f64>frame / 60;
+
+    for (let y: i32 = 0; y < ROWS; y++) {
+      for (let x: i32 = 0; x < COLS; x++) {
+        let d: f64 = 0;
+    
+        d += 3 / Math.hypot(
+          7.5 + Math.sin(s * 1.1) * 7.5 - x,
+          7.5 + Math.cos(s * 1.3) * 7.5 - y
+        );
+    
+        d += 2 / Math.hypot(
+          7.5 + Math.sin(s * 1.5) * 7.5 - x,
+          7.5 + Math.cos(s * 1.7) * 7.5 - y
+        );
+    
+        d += 1 / Math.hypot(
+          7.5 + Math.sin(s * 1.9) * 7.5 - x,
+          7.5 + Math.cos(s * 2.1) * 7.5 - y
+        );
+        
+        setXY(x, y, <u8>Math.round(smoothstep(0.75, 1.0, d) * 3));
+      }
     }
   </script>
 </head>
