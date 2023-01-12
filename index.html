@@ -85,11 +85,16 @@
 
     #status {
       position: absolute;
-      font-size: 1rem;
+      bottom: 0;
+      width: 100%;
       color: white;
+      padding: 1rem;
       font-family: sans-serif;
-      box-sizing: border-box;
-      padding: 1rem 0;
+      text-align: center;
+    }
+
+    #status[error=true] {
+      color: orangered;
     }
   </style>
   <script type="text/assemblyscript-template" id="template">
@@ -125,13 +130,12 @@
     <pre id="preamble"></pre>
     <textarea id="editor"></textarea>
     <pre id="epilogue"></pre>
+    <div id="status"></div>
   </div>
 
   <div id="display-container">
     <canvas id="canvas" width="13" height="19.25"></canvas>
   </div>
-
-  <div id="status"></div>
 
   <script type="module">
     import asc from "assemblyscript/asc";
@@ -204,7 +208,8 @@
     editor.value = sampleCode;
     epilogue.innerHTML = epilogueText.trimStart();
 
-    function setStatus(s) {
+    function setStatus(s, options) {
+      status.setAttribute('error', options?.error || '');
       status.innerHTML = s;
     }
 
@@ -220,15 +225,15 @@
 
         const source = interpolate(template, {code});
 
-        setStatus('Compiling...');
+        setStatus('Compiling&hellip;');
         const binary = await compile(source);
 
-        setStatus('Instantiating...');
+        setStatus('Instantiating&hellip;');
         instance = await instantiate(binary, memory);
 
         setStatus('');
       } catch (error) {
-        setStatus(`${error.message} (${error.cause?.message})`);
+        setStatus(`${error.message} (${error.cause?.message})`, {error: true});
       }
     }
 
@@ -300,7 +305,7 @@
 
     requestAnimationFrame(render);
     
-    refresh();
+    // refresh();
   </script>
 </body>
 </html>
