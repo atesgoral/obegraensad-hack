@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script async src="https://cdn.jsdelivr.net/npm/es-module-shims@1/dist/es-module-shims.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "binaryen": "https://cdn.jsdelivr.net/npm/binaryen@x.x.x/index.js",
+      "long": "https://cdn.jsdelivr.net/npm/long@x.x.x/index.js",
+      "assemblyscript": "https://cdn.jsdelivr.net/npm/assemblyscript@x.x.x/dist/assemblyscript.js",
+      "assemblyscript/asc": "https://cdn.jsdelivr.net/npm/assemblyscript@x.x.x/dist/asc.js"
+    }
+  }
+  </script>
+  <style>
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      margin: 0;
+      padding: 0;
+      background: #222;
+      color: #eee;
+      font-size: 100%;
+    }
+
+    #display-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    #canvas {
+      background: black;
+      margin: 1rem;
+    }
+
+    #editor-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: monospace;
+      font-size: 1rem;
+    }
+
+    #preamble, #epilogue {
+      color: #aaa;
+      padding: 1rem;
+      box-sizing: border-box;
+      margin: 0;
+      width: 100%;
+    }
+
+    #preamble {
+      padding-bottom: 0;
+    }
+
+    #epilogue {
+      padding-top: 0;
+    }
+
+    #editor {
+      font-size: inherit;
+      width: 100%;
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font-family: inherit;
+      box-sizing: border-box;
+      padding: 0 1rem 0 2rem;
+      resize: none;
+    }
+
+    textarea:focus {
+      outline: none;
+    }
+
+    #status {
+      position: absolute;
+      font-size: 1rem;
+      color: white;
+      font-family: sans-serif;
+      box-sizing: border-box;
+      padding: 1rem 0;
+    }
+  </style>
+  <script type="text/assemblyscript-template" id="template">
+    const COLS: i32 = 16;
+    const ROWS: i32 = 16;
+
+    const OFF: u8 = 0;
+    const LIGHT_GRAY: u8 = 1;
+    const DARK_GRAY: u8 = 2;
+    const ON: u8 = 3;
+
+    function set(index: i32, color: u8): void {
+      store<u8>(index, color);
+    }
+
+    function setXY(x: i32, y: i32, color: u8): void {
+      store<u8>(x + y * COLS, color);
+    }
+
+    export function render(frame: i32): void {
+      ${code}
+    }
+  </script>
+  <script type="text/assemblyscript" id="sample-code">
+    //set(frame & 255, ON);
+    for (let i: u8 = 0; i <= 255; i++) {
+      set(i, ON);
+    }
+  </script>
+</head>
+<body>
+  <div id="editor-container">
+    <pre id="preamble"></pre>
+    <textarea id="editor"></textarea>
+    <pre id="epilogue"></pre>
+  </div>
+
+  <div id="display-container">
+    <canvas id="canvas" width="13" height="19.25"></canvas>
+  </div>
+
+  <div id="status"></div>
+
+  <script type="module">
+    import asc from "assemblyscript/asc";
+
+    const COLS = 16;
+    const ROWS = 16;
+
+    const COLORS = {
+      0: '#000',
+      1: '#555',
+      2: '#aaa',
+      3: '#fff',
+    };
+
+    function debounce(fn, delay) {
+      let timeout = null;
+
+      return () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn(), delay);
+      };
+    }
+
+    async function compile(source) {
+      const {error, binary} = await asc.compileString(source, {
+        importMemory: true,
+      });
+
+      if (error) {
+        const re = new Error('Compilation failed');
+        re.cause = error;
+        throw re;
+      }
+
+      return binary;
+    }
+
+    async function instantiate(binary, memory) {
+      const {error, instance} = await WebAssembly.instantiate(binary, {
+        env: {memory},
+      });
+
+      return instance;
+    }
+
+    function interpolate(template, values) {
+      return template.replace(/\$\{([^}]+)\}/g, (_, key) => values[key]);
+    }
+
+    function unindent(s) {
+      const lines = s.replace(/^\n/, '').replace(/\n$/, '').split('\n');
+      const indentation = lines[0].match(/^\s*/)[0].length;
+
+      return lines.map(line => line.slice(indentation)).join('\n');
+    }
+
+    const template = unindent(document.querySelector('#template').innerHTML);
+    const sampleCode = unindent(document.querySelector('#sample-code').innerHTML);
+
+    const canvas = document.querySelector('#canvas');
+    const editor = document.querySelector('#editor');
+    const status = document.querySelector('#status');
+    const preamble = document.querySelector('#preamble');
+    const epilogue = document.querySelector('#epilogue');
+
+    const separator = '<<<>>>';
+    const [preambleText, epilogueText] = interpolate(template, {code: separator}).split(separator);
+
+    preamble.innerHTML = preambleText.trimEnd();
+    editor.value = sampleCode;
+    epilogue.innerHTML = epilogueText.trimStart();
+
+    function setStatus(s) {
+      status.innerHTML = s;
+    }
+
+    const memory = new WebAssembly.Memory({
+      initial: ((COLS * ROWS + 0xffff) & ~0xffff) >>> 16
+    });
+
+    let instance = null;
+
+    async function refresh() {
+      try {
+        const code = editor.value;
+
+        const source = interpolate(template, {code});
+
+        setStatus('Compiling...');
+        const binary = await compile(source);
+
+        setStatus('Instantiating...');
+        instance = await instantiate(binary, memory);
+
+        setStatus('');
+      } catch (error) {
+        setStatus(`${error.message} (${error.cause?.message})`);
+      }
+    }
+
+    editor.addEventListener('keyup', debounce(refresh, 500));
+
+    let pixelWidth = null;
+    let pixelHeight = null;
+    let pixelHSpacing = null;
+    let pixelVSpacing = null;
+
+    /**
+     * 16x16 pixels
+     * Pixel width & height: ~1/2" = 0.5
+     * Horizontal spacing between pixels: ~9/32" = 0.28125 (0.78125 OC)
+     * Vertical spacing between pixels: ~11/16" = 0.6875 (1.1875 OC)
+     * Rendering width: ~12 3/8" = 12.375
+     * Rendering height: ~18 5/16" = 18.3125
+     * Rendering aspect ratio: ~27:40
+     * Screen width: 13" = 13
+     * Screen height: 19 1/4" = 19.25
+     */
+    function resizeCanvas() {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+
+      pixelWidth = canvas.width / 13 * 0.5;
+      pixelHeight = canvas.height / 19.25 * 0.5;
+      pixelHSpacing = (canvas.width - pixelWidth * 16) / (COLS + 1);
+      pixelVSpacing = (canvas.height - pixelHeight * 16) / (ROWS + 1);
+    }
+
+    resizeCanvas();
+
+    window.addEventListener('resize', debounce(resizeCanvas, 250));
+
+    const ctx = canvas.getContext('2d');
+
+    const pixels = new Uint8Array(memory.buffer);
+
+    let frame = 0;
+
+    function render() {
+      requestAnimationFrame(render);
+
+      pixels.fill(0);
+
+      if (instance) {
+        instance.exports.render(frame++);
+      }
+
+      ctx.fillStyle = 'black';
+
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          ctx.fillStyle = COLORS[pixels[row * COLS + col] & 3];
+          ctx.fillRect(
+            pixelHSpacing + col * (pixelWidth + pixelHSpacing),
+            pixelVSpacing + row * (pixelHeight + pixelVSpacing),
+            pixelWidth,
+            pixelHeight,
+          );
+        }
+      }
+    };
+
+    editor.focus();
+
+    requestAnimationFrame(render);
+    
+    refresh();
+  </script>
+</body>
+</html>
+
+
+
