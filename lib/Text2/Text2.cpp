@@ -160,7 +160,7 @@ int Text2::renderChar(char pixels[PIXELS], char c, int x, int y) {
         continue;
       }
 
-      pixels[AT(X, Y)] = FONT_454[offset] & bitmask;
+      pixels[AT(X, Y)] = (FONT_454[offset] & bitmask) >> bitshift;
     }
   }
 
