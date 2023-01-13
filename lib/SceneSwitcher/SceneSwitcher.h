@@ -4,6 +4,10 @@
 #include <Arduino.h>
 #include <Scene.h>
 
+#define EASE_IN 0
+#define SHOW 1
+#define EASE_OUT 2
+
 typedef struct SceneNode {
   Scene *scene;
   int duration;
@@ -20,6 +24,8 @@ private:
   SceneNode *m_scene_tail = NULL;
   SceneNode *m_current_scene = NULL;
   int m_current_scene_start = -1;
+  int state = EASE_IN;
+  char buffer[PIXELS];
 };
 
 #endif
