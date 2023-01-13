@@ -14,6 +14,7 @@
 #include <MIDIScene.h>
 #include <MarioScene.h>
 #include <MetaballsScene.h>
+#include <MonaLisaScene.h>
 #include <OTAStatusScene.h>
 #include <PWMTestScene.h>
 #include <Scene.h>
@@ -345,6 +346,7 @@ void setup() {
   socketIO.onEvent(socketIOEvent);
 
   scene_switcher.append_scene(new ClockScene(), 10);
+  scene_switcher.append_scene(new MonaLisaScene(), 5);
   scene_switcher.append_scene(new GoLScene(), 20);
   scene_switcher.append_scene(new MarioScene(), 5);
   // scene_switcher.append_scene(new MetaballsScene(), 20);
