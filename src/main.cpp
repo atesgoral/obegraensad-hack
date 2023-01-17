@@ -19,6 +19,7 @@
 #include <PWMTestScene.h>
 #include <Scene.h>
 #include <SceneSwitcher.h>
+#include <TextTestScene.h>
 #include <WiFiStatusScene.h>
 
 const int PIN_ENABLE = 47;
@@ -345,6 +346,7 @@ void setup() {
 
   socketIO.onEvent(socketIOEvent);
 
+  // scene_switcher.append_scene(new TextTestScene(), 10);
   scene_switcher.append_scene(new ClockScene(), 10);
   scene_switcher.append_scene(new MonaLisaScene(), 5);
   scene_switcher.append_scene(new GoLScene(), 20);
