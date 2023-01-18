@@ -212,21 +212,21 @@ void draw_loop(void *pRenderingContext) {
   RenderingContext &ctx = *static_cast<RenderingContext *>(pRenderingContext);
 
   int cycle = 0;
+  int dc;
+  int scaled_dcs[4];
+  int pos;
+  bool on;
 
   for (;;) {
-    int dc = cycle % ctx.dc_max;
-    int scaled_dcs[4];
+    dc = cycle % ctx.dc_max;
 
     for (int i = 0; i < 4; i++) {
       scaled_dcs[i] = ctx.dcs[i] * ctx.dc_max / 0x7f;
     }
 
     for (int idx = 0; idx < PIXELS; idx++) {
-      const int pos = POSITIONS[idx];
-      const int col = pos & 15;
-      const int row = pos >> 4;
-
-      char on = scaled_dcs[ctx.buffer[pos] & 3] > dc;
+      pos = POSITIONS[idx];
+      on = scaled_dcs[ctx.buffer[pos] & 3] > dc;
 
       digitalWrite(PIN_DATA, on ? HIGH : LOW);
       digitalWrite(PIN_CLOCK, HIGH);
