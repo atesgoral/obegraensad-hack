@@ -24,8 +24,28 @@ bool WasmTestScene::init() {
 
   m3_runtime->memoryLimit = WASM_MEMORY_LIMIT;
 
-  M3Result result =
-      m3_ParseModule(m3_env, &m3_module, scene_wasm, sizeof(scene_wasm));
+  return this->load_wasm(scene_wasm, sizeof(scene_wasm));
+  // return true;
+}
+
+void WasmTestScene::render(char pixels[PIXELS], const int frame) {
+  if (!m3_render) {
+    return;
+  }
+
+  M3Result result = m3_CallV(m3_render, frame);
+
+  if (result) {
+    Serial.print("Failed to call Wasm function: ");
+    Serial.println(result);
+    return;
+  }
+
+  memcpy(pixels, m3_pixels, PIXELS);
+}
+
+bool WasmTestScene::load_wasm(unsigned char wasm[], int length) {
+  M3Result result = m3_ParseModule(m3_env, &m3_module, wasm, length);
 
   if (result) {
     Serial.print("Failed to parse Wasm module: ");
@@ -59,20 +79,4 @@ bool WasmTestScene::init() {
   }
 
   return true;
-}
-
-void WasmTestScene::render(char pixels[PIXELS], const int frame) {
-  if (!m3_render) {
-    return;
-  }
-
-  M3Result result = m3_CallV(m3_render, frame);
-
-  if (result) {
-    Serial.print("Failed to call Wasm function: ");
-    Serial.println(result);
-    return;
-  }
-
-  memcpy(pixels, m3_pixels, PIXELS);
 }

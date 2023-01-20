@@ -99,11 +99,12 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t *payload,
   case sIOtype_EVENT: {
     char *sptr = NULL;
     int id = strtol((char *)payload, &sptr, 10);
-    Serial.printf("[IOc] get event: %s id: %d\n", payload, id);
+    Serial.printf("[IOc] get event: %d id: %d\n", length, id);
+    // Serial.printf("[IOc] get event: %s id: %d\n", payload, id);
     if (id) {
       payload = (uint8_t *)sptr;
     }
-    DynamicJsonDocument doc(1024);
+    DynamicJsonDocument doc(4096);
     DeserializationError error = deserializeJson(doc, payload, length);
     if (error) {
       Serial.print(F("deserializeJson() failed: "));
@@ -159,6 +160,10 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t *payload,
           // } else if (channel == 4) {
           //   rendering_context.dc_max = value ? value : 1;
           // }
+        }
+      } else if (eventName == "binary") {
+        if (current_scene) {
+          current_scene->load_wasm(payload, length);
         }
       }
     }

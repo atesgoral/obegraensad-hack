@@ -10,6 +10,7 @@ class WasmTestScene : virtual public Scene {
 public:
   virtual bool init();
   virtual void render(char pixels[PIXELS], const int frame);
+  virtual bool load_wasm(unsigned char wasm[], int length);
 
 private:
   IM3Environment m3_env;
