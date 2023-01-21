@@ -1,1 +1,5 @@
+AlignAfterOpenBracket: BlockIndent
+AlignOperands: DontAlign
+AllowShortBlocksOnASingleLine: Empty
 BreakBeforeBraces: Attach
+ContinuationIndentWidth: 2
