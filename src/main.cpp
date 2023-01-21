@@ -7,6 +7,7 @@
 #include <WebSocketsClient.h>
 #include <WiFi.h>
 #include <esp_task_wdt.h>
+#include <mbedtls/base64.h>
 
 #include <ClockScene.h>
 #include <Globals.h>
@@ -84,8 +85,13 @@ SocketIOclient socketIO;
 
 bool on = true;
 
-void socketIOEvent(socketIOmessageType_t type, uint8_t *payload,
-                   size_t length) {
+#define CHUNK_SIZE (3 * 100)
+size_t binary_offset = 0;
+unsigned char binary_buffer[4096];
+
+void socketIOEvent(
+  socketIOmessageType_t type, uint8_t *payload, size_t length
+) {
   switch (type) {
   case sIOtype_DISCONNECT:
     Serial.printf("[IOc] Disconnected!\n");
@@ -161,9 +167,27 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t *payload,
           //   rendering_context.dc_max = value ? value : 1;
           // }
         }
-      } else if (eventName == "binary") {
+      } else if (eventName == "binaryBegin") {
+        binary_offset = 0;
+      } else if (eventName == "binaryChunk") {
+        String base64 = doc[1];
+        size_t chunk_length;
+
+        int result = mbedtls_base64_decode(
+          binary_buffer + binary_offset, sizeof(binary_buffer) - binary_offset,
+          &chunk_length,
+          reinterpret_cast<const unsigned char *>(base64.c_str()),
+          base64.length()
+        );
+
+        if (result) {
+          Serial.printf("Failed to decode base64: %d\n", result);
+        } else {
+          binary_offset += chunk_length;
+        }
+      } else if (eventName == "binaryEnd") {
         if (current_scene) {
-          current_scene->load_wasm(payload, length);
+          current_scene->load_wasm(binary_buffer, binary_offset);
         }
       }
     }
@@ -299,56 +323,57 @@ void setup() {
   ArduinoOTA.setHostname(hostname.c_str());
 
   ArduinoOTA
-      .onStart([]() {
-        String type;
+    .onStart([]() {
+      String type;
 
-        if (ArduinoOTA.getCommand() == U_FLASH) {
-          type = "sketch";
-        } else { // U_SPIFFS
-          type = "filesystem";
-        }
-        // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS
-        // using SPIFFS.end()
-        Serial.println("Start updating " + type);
+      if (ArduinoOTA.getCommand() == U_FLASH) {
+        type = "sketch";
+      } else { // U_SPIFFS
+        type = "filesystem";
+      }
+      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS
+      // using SPIFFS.end()
+      Serial.println("Start updating " + type);
 
-        set_scene(&ota_status_scene);
+      set_scene(&ota_status_scene);
 
-        if (ota_status_scene.set_progress(0)) {
-          render();
-        }
-      })
-      .onEnd([]() {
-        Serial.println("\nEnd");
-        if (ota_status_scene.set_progress(100)) {
-          render();
-        }
-      })
-      .onProgress([](unsigned int progress, unsigned int total) {
-        int pct = progress * 100 / total;
-        Serial.printf("Progress: %u%%\r", pct);
+      if (ota_status_scene.set_progress(0)) {
+        render();
+      }
+    })
+    .onEnd([]() {
+      Serial.println("\nEnd");
+      if (ota_status_scene.set_progress(100)) {
+        render();
+      }
+    })
+    .onProgress([](unsigned int progress, unsigned int total) {
+      int pct = progress * 100 / total;
+      Serial.printf("Progress: %u%%\r", pct);
 
-        if (ota_status_scene.set_progress(pct)) {
-          render();
-        }
-      })
-      .onError([](ota_error_t error) {
-        Serial.printf("Error[%u]: ", error);
-        if (error == OTA_AUTH_ERROR)
-          Serial.println("Auth Failed");
-        else if (error == OTA_BEGIN_ERROR)
-          Serial.println("Begin Failed");
-        else if (error == OTA_CONNECT_ERROR)
-          Serial.println("Connect Failed");
-        else if (error == OTA_RECEIVE_ERROR)
-          Serial.println("Receive Failed");
-        else if (error == OTA_END_ERROR)
-          Serial.println("End Failed");
-      });
+      if (ota_status_scene.set_progress(pct)) {
+        render();
+      }
+    })
+    .onError([](ota_error_t error) {
+      Serial.printf("Error[%u]: ", error);
+      if (error == OTA_AUTH_ERROR)
+        Serial.println("Auth Failed");
+      else if (error == OTA_BEGIN_ERROR)
+        Serial.println("Begin Failed");
+      else if (error == OTA_CONNECT_ERROR)
+        Serial.println("Connect Failed");
+      else if (error == OTA_RECEIVE_ERROR)
+        Serial.println("Receive Failed");
+      else if (error == OTA_END_ERROR)
+        Serial.println("End Failed");
+    });
 
   ArduinoOTA.begin();
 
-  socketIO.beginSSL("frekvens-fjarrkontroll.glitch.me", 443,
-                    "/socket.io/?EIO=4");
+  socketIO.beginSSL(
+    "frekvens-fjarrkontroll.glitch.me", 443, "/socket.io/?EIO=4"
+  );
 
   socketIO.onEvent(socketIOEvent);
 
@@ -372,8 +397,9 @@ void setup() {
   // vTaskPrioritySet
 
   auto result = xTaskCreatePinnedToCore(
-      &draw_loop, "draw_loop", configMINIMAL_STACK_SIZE, &rendering_context,
-      task_priority, &task_handle, 0);
+    &draw_loop, "draw_loop", configMINIMAL_STACK_SIZE, &rendering_context,
+    task_priority, &task_handle, 0
+  );
   if (result == pdPASS) {
     Serial.println("Render loop task created");
   } else {
