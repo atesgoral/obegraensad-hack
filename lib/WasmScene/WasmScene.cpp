@@ -1,13 +1,13 @@
 #include <Arduino.h>
 
-#include "WasmTestScene.h"
+#include "WasmScene.h"
 
 #include "scene.wasm.h"
 
 #define WASM_STACK_SLOTS 1024
 #define WASM_MEMORY_LIMIT 4096
 
-bool WasmTestScene::init() {
+bool WasmScene::init() {
   m3_env = m3_NewEnvironment();
 
   if (!m3_env) {
@@ -28,7 +28,7 @@ bool WasmTestScene::init() {
   // return true;
 }
 
-void WasmTestScene::render(char pixels[PIXELS], const int frame) {
+void WasmScene::render(char pixels[PIXELS], const int frame) {
   if (!m3_render) {
     return;
   }
@@ -44,7 +44,7 @@ void WasmTestScene::render(char pixels[PIXELS], const int frame) {
   memcpy(pixels, m3_pixels, PIXELS);
 }
 
-bool WasmTestScene::load_wasm(unsigned char wasm[], int length) {
+bool WasmScene::load_wasm(unsigned char wasm[], int length) {
   M3Result result = m3_ParseModule(m3_env, &m3_module, wasm, length);
 
   if (result) {

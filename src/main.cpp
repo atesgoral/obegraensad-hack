@@ -21,7 +21,7 @@
 #include <Scene.h>
 #include <SceneSwitcher.h>
 #include <TextTestScene.h>
-#include <WasmTestScene.h>
+#include <WasmScene.h>
 #include <WiFiStatusScene.h>
 
 const int PIN_ENABLE = 47;
@@ -88,6 +88,11 @@ bool on = true;
 #define CHUNK_SIZE (3 * 100)
 size_t binary_offset = 0;
 unsigned char binary_buffer[4096];
+
+WiFiStatusScene wifi_status_scene;
+OTAStatusScene ota_status_scene;
+WasmScene wasm_scene;
+SceneSwitcher scene_switcher;
 
 void socketIOEvent(
   socketIOmessageType_t type, uint8_t *payload, size_t length
@@ -186,9 +191,8 @@ void socketIOEvent(
           binary_offset += chunk_length;
         }
       } else if (eventName == "binaryEnd") {
-        if (current_scene) {
-          current_scene->load_wasm(binary_buffer, binary_offset);
-        }
+        set_scene(&wasm_scene);
+        wasm_scene.load_wasm(binary_buffer, binary_offset);
       }
     }
   } break;
@@ -218,10 +222,6 @@ void reset_settings(Preferences &preferences) {
   preferences.putString("wifi_password", "<your WiFi password>");
   preferences.putString("hostname", "obegransad");
 }
-
-WiFiStatusScene wifi_status_scene;
-OTAStatusScene ota_status_scene;
-SceneSwitcher scene_switcher;
 
 void render() {
   memset(rendering_context.pixels, 0, sizeof(rendering_context.pixels1));
@@ -387,7 +387,6 @@ void setup() {
   // set_scene(new MIDIScene());
   // set_scene(new PWMTestScene());
   // set_scene(new TextTestScene());
-  set_scene(new WasmTestScene());
 
   esp_task_wdt_init(5000, false);
 
