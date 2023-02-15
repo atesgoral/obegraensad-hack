@@ -81,7 +81,9 @@ void set_scene(Scene *scene) {
   }
 }
 
+#ifdef USE_WEBSOCKETS
 SocketIOclient socketIO;
+#endif
 
 bool on = true;
 
@@ -94,6 +96,7 @@ OTAStatusScene ota_status_scene;
 WasmScene wasm_scene;
 SceneSwitcher scene_switcher;
 
+#ifdef USE_WEBSOCKETS
 void socketIOEvent(
   socketIOmessageType_t type, uint8_t *payload, size_t length
 ) {
@@ -210,6 +213,7 @@ void socketIOEvent(
     break;
   }
 }
+#endif
 
 int prevSwitchState;
 
@@ -288,7 +292,11 @@ void setup() {
 
   Serial.begin(115200);
 
-  delay(1000);
+  delay(100);
+
+  while (!Serial) {}
+
+  delay(3000);
 
   Serial.println("Booting");
 
@@ -320,6 +328,7 @@ void setup() {
   Serial.println("");
   Serial.println("Connected to WiFi");
 
+#ifdef ENABLE_OTA
   ArduinoOTA.setHostname(hostname.c_str());
 
   ArduinoOTA
@@ -370,12 +379,15 @@ void setup() {
     });
 
   ArduinoOTA.begin();
+#endif
 
+#ifdef USE_WEBSOCKETS
   socketIO.beginSSL(
     "frekvens-fjarrkontroll.glitch.me", 443, "/socket.io/?EIO=4"
   );
 
   socketIO.onEvent(socketIOEvent);
+#endif
 
   scene_switcher.append_scene(new ClockScene(), 10);
   scene_switcher.append_scene(new MonaLisaScene(), 5);
@@ -407,8 +419,14 @@ void setup() {
 }
 
 void loop() {
+  unsigned long begin = millis();
+
+#ifdef ENABLE_OTA
   ArduinoOTA.handle();
+#endif
+#ifdef USE_WEBSOCKETS
   socketIO.loop();
+#endif
 
   int switchState = !digitalRead(PIN_SWITCH);
 
@@ -425,6 +443,15 @@ void loop() {
 
   render();
 
-  // TODO make this based on elapsed time
-  delay(1000 / FPS);
+  unsigned long end = millis();
+  unsigned long elapsed = end - begin;
+  unsigned long remaining = 1000l / FPS - elapsed;
+  unsigned long miniumum_delay = 10;
+
+  if (remaining > miniumum_delay) {
+    Serial.println(remaining);
+    delay(remaining);
+  } else {
+    delay(miniumum_delay);
+  }
 }
