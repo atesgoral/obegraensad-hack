@@ -24,6 +24,10 @@
 #include <WasmScene.h>
 #include <WiFiStatusScene.h>
 
+#define USE_WIFI
+#define USE_OTA
+#define USE_WEBSOCKETS
+
 const int PIN_ENABLE = 47;
 
 const int PIN_SWITCH = 45;
@@ -316,6 +320,7 @@ void setup() {
 
   Serial.printf("Connecting to %s", wifi_ssid.c_str());
 
+#ifdef USE_WIFI
   WiFi.mode(WIFI_STA);
   WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
 
@@ -327,8 +332,9 @@ void setup() {
 
   Serial.println("");
   Serial.println("Connected to WiFi");
+#endif
 
-#ifdef ENABLE_OTA
+#ifdef USE_OTA
   ArduinoOTA.setHostname(hostname.c_str());
 
   ArduinoOTA
@@ -421,7 +427,7 @@ void setup() {
 void loop() {
   unsigned long begin = millis();
 
-#ifdef ENABLE_OTA
+#ifdef USE_OTA
   ArduinoOTA.handle();
 #endif
 #ifdef USE_WEBSOCKETS
