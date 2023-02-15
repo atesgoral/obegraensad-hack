@@ -444,12 +444,12 @@ void loop() {
   render();
 
   unsigned long end = millis();
-  unsigned long elapsed = end - begin;
-  unsigned long remaining = 1000l / FPS - elapsed;
-  unsigned long miniumum_delay = 10;
+
+  long elapsed = end - begin;
+  long remaining = 1000l / FPS - elapsed;
+  long miniumum_delay = 10;
 
   if (remaining > miniumum_delay) {
-    Serial.println(remaining);
     delay(remaining);
   } else {
     delay(miniumum_delay);
