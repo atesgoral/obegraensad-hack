@@ -4,7 +4,7 @@
 
 #define FADE_FRAME_COUNT ROWS
 
-void SceneSwitcher::render(char pixels[PIXELS], const int frame) {
+void SceneSwitcher::render(char pixels[PIXELS], const int frame, float t) {
   if (!m_scene_head) {
     return;
   }
@@ -39,7 +39,7 @@ void SceneSwitcher::render(char pixels[PIXELS], const int frame) {
   case EASE_OUT:
     if (frame_count > FADE_FRAME_COUNT) {
       m_current_scene =
-          m_current_scene->next ? m_current_scene->next : m_scene_head;
+        m_current_scene->next ? m_current_scene->next : m_scene_head;
       m_current_scene_start = frame;
       m_current_scene->scene->init();
 
@@ -53,11 +53,11 @@ void SceneSwitcher::render(char pixels[PIXELS], const int frame) {
   }
 
   if (fade == -1) {
-    m_current_scene->scene->render(pixels, frame);
+    m_current_scene->scene->render(pixels, frame, t);
   } else {
     memset(buffer, 0, sizeof(buffer));
 
-    m_current_scene->scene->render(buffer, frame);
+    m_current_scene->scene->render(buffer, frame, t);
 
     // for (int i = floor(ROWS * fade / FADE_FRAME_COUNT) * COLS; i < PIXELS;
     for (int i = 0; i < PIXELS; i++) {

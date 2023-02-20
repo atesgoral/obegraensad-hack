@@ -82,6 +82,8 @@ RenderingContext rendering_context;
 
 int frame = 0;
 
+unsigned long long epoch = 0;
+
 Scene *current_scene = NULL;
 
 void set_scene(Scene *scene) {
@@ -119,6 +121,10 @@ void socketIOEvent(
     break;
   case sIOtype_CONNECT: {
     Serial.printf("[IOc] Connected to url: %s\n", payload);
+
+    epoch = getTimestamp();
+
+    Serial.printf("Epoch: %llu\n", epoch);
 
     // join default namespace (no auto join in Socket.IO V3)
     socketIO.send(sIOtype_CONNECT, "/");
@@ -169,8 +175,15 @@ void socketIOEvent(
       socketIO.send(sIOtype_ACK, output);
     } else {
       if (eventName == "sync") {
+        auto now = getTimestamp();
+
         auto sync_info = doc[1];
-        sync_info["server"] = getTimestamp();
+        sync_info["server"] = now;
+        sync_info["epoch"] = epoch;
+
+        Serial.printf(
+          "now: %llu epoch: %llu t: %llu\n", now, epoch, now - epoch
+        );
 
         doc[0] = "syncResponse";
 
@@ -262,7 +275,9 @@ void render() {
   memset(rendering_context.pixels, 0, sizeof(rendering_context.pixels1));
 
   if (current_scene) {
-    current_scene->render(rendering_context.pixels, frame);
+    current_scene->render(
+      rendering_context.pixels, frame, (float)(getTimestamp() - epoch) / 1000
+    );
   }
 
   frame++;

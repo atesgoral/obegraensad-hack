@@ -1,6 +1,6 @@
 #include "MIDIScene.h"
 
-void MIDIScene::render(char pixels[PIXELS], const int frame) {
+void MIDIScene::render(char pixels[PIXELS], const int frame, float t) {
   for (int x = 0; x < COLS; x++) {
     char value = values[x] >> 3;
 

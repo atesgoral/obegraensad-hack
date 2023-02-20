@@ -6,7 +6,7 @@
 
 #include "PWMTestScene.h"
 
-void PWMTestScene::render(char pixels[PIXELS], const int frame) {
+void PWMTestScene::render(char pixels[PIXELS], const int frame, float t) {
   for (int y = 0; y < ROWS >> 1; y++) {
     int bri = y >> 1;
 

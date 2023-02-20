@@ -28,12 +28,12 @@ bool WasmScene::init() {
   // return true;
 }
 
-void WasmScene::render(char pixels[PIXELS], const int frame) {
+void WasmScene::render(char pixels[PIXELS], const int frame, float t) {
   if (!m3_render) {
     return;
   }
 
-  M3Result result = m3_CallV(m3_render, frame);
+  M3Result result = m3_CallV(m3_render, frame, t);
 
   if (result) {
     Serial.print("Failed to call Wasm function: ");

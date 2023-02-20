@@ -23,7 +23,7 @@ bool ClockScene::init() {
   return true;
 }
 
-void ClockScene::render(char pixels[PIXELS], const int frame) {
+void ClockScene::render(char pixels[PIXELS], const int frame, float t) {
   struct tm timeinfo;
 
   if (!getLocalTime(&timeinfo)) {

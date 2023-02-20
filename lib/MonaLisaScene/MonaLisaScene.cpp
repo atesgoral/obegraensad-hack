@@ -26,6 +26,6 @@ const char MONA_LISA[PIXELS] = {
 };
 // clang-format on
 
-void MonaLisaScene::render(char pixels[PIXELS], const int frame) {
+void MonaLisaScene::render(char pixels[PIXELS], const int frame, float t) {
   Bitmap::renderBitmap(pixels, MONA_LISA);
 }

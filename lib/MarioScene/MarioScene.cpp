@@ -26,7 +26,7 @@ const char MARIO[PIXELS] = {
 };
 // clang-format on
 
-void MarioScene::render(char pixels[PIXELS], const int frame) {
+void MarioScene::render(char pixels[PIXELS], const int frame, float t) {
   // Bitmap::renderBitmap(pixels, SKULL, random() & 3);
   Bitmap::renderBitmap(pixels, MARIO);
 }

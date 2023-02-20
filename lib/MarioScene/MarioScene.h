@@ -5,7 +5,7 @@
 
 class MarioScene : virtual public Scene {
 public:
-  virtual void render(char pixels[PIXELS], const int frame);
+  virtual void render(char pixels[PIXELS], const int frame, float t);
 };
 
 #endif

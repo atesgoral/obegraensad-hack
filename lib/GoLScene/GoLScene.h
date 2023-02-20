@@ -6,7 +6,7 @@
 class GoLScene : virtual public Scene {
 public:
   virtual bool init();
-  virtual void render(char pixels[PIXELS], const int frame);
+  virtual void render(char pixels[PIXELS], const int frame, float t);
 
 private:
   char cells[PIXELS];

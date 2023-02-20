@@ -24,7 +24,7 @@ bool GoLScene::init() {
   return true;
 }
 
-void GoLScene::render(char pixels[PIXELS], const int frame) {
+void GoLScene::render(char pixels[PIXELS], const int frame, float t) {
   if (frame > 0 && frame % FRAMES_PER_GENERATION == 0) {
     if (frame % FRAMES_PER_RANDOMIZATION == 0) {
       randomize();

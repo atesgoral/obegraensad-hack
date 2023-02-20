@@ -9,7 +9,7 @@
 class WasmScene : virtual public Scene {
 public:
   virtual bool init();
-  virtual void render(char pixels[PIXELS], const int frame);
+  virtual void render(char pixels[PIXELS], const int frame, float t);
   bool load_wasm(unsigned char wasm[], int length);
 
 private:
