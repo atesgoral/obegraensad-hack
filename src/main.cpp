@@ -100,6 +100,8 @@ OTAStatusScene ota_status_scene;
 WasmScene wasm_scene;
 SceneSwitcher scene_switcher;
 
+String client_secret;
+
 #ifdef USE_WEBSOCKETS
 void socketIOEvent(
   socketIOmessageType_t type, uint8_t *payload, size_t length
@@ -108,12 +110,20 @@ void socketIOEvent(
   case sIOtype_DISCONNECT:
     Serial.printf("[IOc] Disconnected!\n");
     break;
-  case sIOtype_CONNECT:
+  case sIOtype_CONNECT: {
     Serial.printf("[IOc] Connected to url: %s\n", payload);
 
     // join default namespace (no auto join in Socket.IO V3)
     socketIO.send(sIOtype_CONNECT, "/");
-    break;
+
+    DynamicJsonDocument doc(128);
+    JsonArray array = doc.to<JsonArray>();
+    array.add("identify");
+    array.add(client_secret);
+    String output;
+    serializeJson(doc, output);
+    socketIO.sendEVENT(output);
+  } break;
   case sIOtype_EVENT: {
     char *sptr = NULL;
     int id = strtol((char *)payload, &sptr, 10);
@@ -229,6 +239,7 @@ void reset_settings(Preferences &preferences) {
   preferences.putString("wifi_ssid", "<your WiFi SSID>");
   preferences.putString("wifi_password", "<your WiFi password>");
   preferences.putString("hostname", "obegransad");
+  preferences.putString("client_secret", "<your client secret>");
 }
 
 void render() {
@@ -313,6 +324,8 @@ void setup() {
   String wifi_ssid = preferences.getString("wifi_ssid");
   String wifi_password = preferences.getString("wifi_password");
   String hostname = preferences.getString("hostname");
+
+  client_secret = preferences.getString("client_secret");
 
   preferences.end();
 
