@@ -6,6 +6,7 @@
 #include <SocketIOclient.h>
 #include <WebSocketsClient.h>
 #include <WiFi.h>
+#include <chrono>
 #include <esp_task_wdt.h>
 #include <mbedtls/base64.h>
 
@@ -61,6 +62,12 @@ const int POSITIONS[PIXELS] = {
   0xef, 0xee, 0xed, 0xec, 0xeb, 0xea, 0xe9, 0xe8, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff,
 };
 // clang-format on
+
+unsigned long long getTimestamp() {
+  using namespace std::chrono;
+  auto now = high_resolution_clock::now();
+  return duration_cast<milliseconds>(now.time_since_epoch()).count();
+}
 
 typedef struct RenderingContext {
   char pixels1[PIXELS] = {};
@@ -127,7 +134,7 @@ void socketIOEvent(
   case sIOtype_EVENT: {
     char *sptr = NULL;
     int id = strtol((char *)payload, &sptr, 10);
-    Serial.printf("[IOc] get event: %d id: %d\n", length, id);
+    // Serial.printf("[IOc] get event: %d id: %d\n", length, id);
     // Serial.printf("[IOc] get event: %s id: %d\n", payload, id);
     if (id) {
       payload = (uint8_t *)sptr;
@@ -141,7 +148,7 @@ void socketIOEvent(
     }
 
     String eventName = doc[0];
-    Serial.printf("[IOc] event name: %s\n", eventName.c_str());
+    // Serial.printf("[IOc] event name: %s\n", eventName.c_str());
 
     // Message Includes a ID for a ACK (callback)
     if (id) {
@@ -161,7 +168,16 @@ void socketIOEvent(
       // Send event
       socketIO.send(sIOtype_ACK, output);
     } else {
-      if (eventName == "activate") {
+      if (eventName == "sync") {
+        auto sync_info = doc[1];
+        sync_info["server"] = getTimestamp();
+
+        doc[0] = "syncResponse";
+
+        String output;
+        serializeJson(doc, output);
+        socketIO.sendEVENT(output);
+      } else if (eventName == "activate") {
         Serial.println("IFTTT activation");
 
         String scene = doc[1];
